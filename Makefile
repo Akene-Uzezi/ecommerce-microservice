@@ -1,7 +1,7 @@
 .PHONY: gen clean
 
 gen:
-	@mkdir -p api/gen/order api/gen/stock api/gen/payment
+	@mkdir -p api/gen/order api/gen/stock api/gen/payment api/gen/auth
 
 	@protoc -I=api/proto \
 		--go_out=api/gen/order --go_opt=paths=source_relative \

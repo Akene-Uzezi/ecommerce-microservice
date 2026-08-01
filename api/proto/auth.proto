@@ -3,3 +3,26 @@ syntax = "proto3";
 package auth;
 
 option go_package = "ecommerce/api/gen/auth;authpb";
+
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+}
+
+message CreateUserResponse {
+  string email = 1;
+  string name = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse { string token = 1; }
+
+service StockService {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
