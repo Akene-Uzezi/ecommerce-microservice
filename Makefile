@@ -18,6 +18,11 @@ gen:
 		--go-grpc_out=api/gen/payment --go-grpc_opt=paths=source_relative \
 		payment.proto
 
+	@protoc -I=api/proto \
+		--go_out=api/gen/auth --go_opt=paths=source_relative \
+		--go-grpc_out=api/gen/auth --go-grpc_opt=paths=source_relative \
+		auth.proto
+
 	@echo "Protobuf stubs generated cleanly!"
 
 clean:
