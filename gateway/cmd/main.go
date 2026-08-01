@@ -2,18 +2,26 @@ package main
 
 import (
 	"ecommerce-gateway/internal/handler"
+	shared "ecommerce-shared"
+	"fmt"
 	"log"
 	"net/http"
 
 	pb "ecommerce-api/gen/order"
 
+	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+var (
+	gatewayPort     = shared.GetEnvString("GATEWAY_PORT", "3000")
+	orderServiceURL = shared.GetEnvString("ORDER_SERVICE_URL", "localhost:4444")
+)
+
 func main() {
 	conn, err := grpc.NewClient(
-		"localhost:4444",
+		orderServiceURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
@@ -22,7 +30,7 @@ func main() {
 	defer conn.Close()
 
 	orderClient := pb.NewOrderServiceClient(conn)
-	addr := ":3000"
+	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
 	handler := handler.NewHTTPHandler(orderClient)
 	handler.RegisterRoutes(mux)

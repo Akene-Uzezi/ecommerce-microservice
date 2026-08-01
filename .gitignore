@@ -1,3 +1,9 @@
 .kilo/
+
+# gateway folder
 gateway/tmp/
+gateway/.env
+
+# orders folder
 orders/tmp/
+orders/.env
