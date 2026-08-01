@@ -1,12 +1,25 @@
-.PHONY: gen
+.PHONY: gen clean
 
 gen:
-		@protoc --go_out=. --go_opt=paths=source_relative \
-			--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-			api/proto/order.proto --go_out=api/gen/order --go-grpc_out=api/gen/order
-		@protoc --go_out=. --go_opt=paths=source_relative \
-			--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-			api/proto/stock.proto --go_out=api/gen/stock --go-grpc_out=api/gen/stock
-		@protoc --go_out=. --go_opt=paths=source_relative \
-			--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-			api/proto/payment.proto --go_out=api/gen/payment --go-grpc_out=api/gen/payment
+	@mkdir -p api/gen/order api/gen/stock api/gen/payment
+
+	@protoc -I=api/proto \
+		--go_out=api/gen/order --go_opt=paths=source_relative \
+		--go-grpc_out=api/gen/order --go-grpc_opt=paths=source_relative \
+		order.proto
+
+	@protoc -I=api/proto \
+		--go_out=api/gen/stock --go_opt=paths=source_relative \
+		--go-grpc_out=api/gen/stock --go-grpc_opt=paths=source_relative \
+		stock.proto
+
+	@protoc -I=api/proto \
+		--go_out=api/gen/payment --go_opt=paths=source_relative \
+		--go-grpc_out=api/gen/payment --go-grpc_opt=paths=source_relative \
+		payment.proto
+
+	@echo "Protobuf stubs generated cleanly!"
+
+clean:
+	rm -rf api/gen/*
+	rm -f api/proto/*.pb.go
