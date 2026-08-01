@@ -26,5 +26,33 @@ services:
     ports:
       - "4444:4444"
 
+  auth-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: auth
+      POSTGRES_DB: auth_db
+    ports:
+      - "6433:5432"
+    volumes:
+      - auth_db:/var/lib/postgresql/data
+      - ./scripts/auth_init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: .
+      dockerfile: auth/Dockerfile
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    ports:
+      - "5555:5555"
+
 volumes:
   orders_data:
+  auth_db:
