@@ -1,5 +1,5 @@
-// Package httphandler for the gateway service
-package httphandler
+// Package handler for the gateway service
+package handler
 
 import (
 	shared "ecommerce-shared"
@@ -9,7 +9,7 @@ import (
 
 type handler struct{}
 
-func NewHandler() *handler {
+func NewHTTPHandler() *handler {
 	return &handler{}
 }
 

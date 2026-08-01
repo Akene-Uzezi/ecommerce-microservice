@@ -1,7 +1,7 @@
 package main
 
 import (
-	httphandler "ecommerce-gateway/internal/handler"
+	"ecommerce-gateway/internal/handler"
 	"log"
 	"net/http"
 )
@@ -9,7 +9,7 @@ import (
 func main() {
 	addr := ":3000"
 	mux := http.NewServeMux()
-	handler := httphandler.NewHandler()
+	handler := handler.NewHTTPHandler()
 	handler.RegisterRoutes(mux)
 
 	log.Printf("Server running on port%v", addr)
