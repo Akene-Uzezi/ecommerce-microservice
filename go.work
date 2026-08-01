@@ -2,9 +2,10 @@ go 1.26.5
 
 use (
 	./api
+	./auth
 	./gateway
 	./orders
 	./payments
-	./stock
 	./shared
+	./stock
 )
