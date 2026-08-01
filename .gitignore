@@ -1,5 +1,8 @@
 .kilo/
 
+# api gen files
+api/gen/
+
 # gateway folder
 gateway/tmp/
 gateway/.env
