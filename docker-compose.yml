@@ -1,0 +1,30 @@
+services:
+  orders-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+      POSTGRES_DB: orders_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - orders_data:/var/lib/postgresql/data
+      - ./scripts/orders_init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  orders:
+    build:
+      context: .
+      dockerfile: orders/Dockerfile
+    depends_on:
+      orders-db:
+        condition: service_healthy
+    ports:
+      - "4444:4444"
+
+volumes:
+  orders_data:
