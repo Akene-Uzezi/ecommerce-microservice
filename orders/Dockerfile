@@ -4,8 +4,12 @@ WORKDIR /workspace
 
 COPY go.work go.work.sum ./
 COPY ./api/ ./api
-COPY ./shared ./shared
-COPY ./orders ./orders
+COPY ./auth/ ./auth
+COPY ./gateway/ ./gateway
+COPY ./orders/ ./orders
+COPY ./payments/ ./payments
+COPY ./shared/ ./shared
+COPY ./stock/ ./stock
 
 WORKDIR /workspace/orders
 RUN go build -o /bin/orders ./cmd
