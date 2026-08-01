@@ -3,17 +3,18 @@ package handler
 
 import (
 	shared "ecommerce-shared"
+	"fmt"
 	"log"
 	"net/http"
 
-	pb "ecommerce-api/gen/order"
+	orderpb "ecommerce-api/gen/order"
 )
 
 type handler struct {
-	orderClient pb.OrderServiceClient
+	orderClient orderpb.OrderServiceClient
 }
 
-func NewHTTPHandler(orderClient pb.OrderServiceClient) *handler {
+func NewOrderHTTPHandler(orderClient orderpb.OrderServiceClient) *handler {
 	return &handler{
 		orderClient: orderClient,
 	}
@@ -29,18 +30,18 @@ func (h *handler) ping(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateOrderPayload struct {
-	CustomerID string          `json:"customer_id"`
-	Items      []*pb.OrderItem `json:"items"`
+	CustomerID string               `json:"customer_id"`
+	Items      []*orderpb.OrderItem `json:"items"`
 }
 
 func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	var body CreateOrderPayload
 	if err := shared.ReadJSON(r, body); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid request body: %s", err), http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.orderClient.CreateOrder(r.Context(), &pb.CreateOrderRequest{
+	res, err := h.orderClient.CreateOrder(r.Context(), &orderpb.CreateOrderRequest{
 		CustomerId: body.CustomerID,
 		Items:      body.Items,
 	})

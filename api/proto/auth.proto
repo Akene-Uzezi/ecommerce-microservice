@@ -22,7 +22,7 @@ message LoginRequest {
 
 message LoginResponse { string token = 1; }
 
-service StockService {
+service AuthService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
 }

@@ -10,3 +10,7 @@ gateway/.env
 # orders folder
 orders/tmp/
 orders/.env
+
+# auth folder
+auth/tmp/
+auth/.env

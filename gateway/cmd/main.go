@@ -7,7 +7,8 @@ import (
 	"log"
 	"net/http"
 
-	pb "ecommerce-api/gen/order"
+	authpb "ecommerce-api/gen/auth"
+	orderpb "ecommerce-api/gen/order"
 
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
@@ -17,23 +18,35 @@ import (
 var (
 	gatewayPort     = shared.GetEnvString("GATEWAY_PORT", "3000")
 	orderServiceURL = shared.GetEnvString("ORDER_SERVICE_URL", "localhost:4444")
+	authServiceURL  = shared.GetEnvString("AUTH_SERVICE_URL", "localhost:5555")
 )
 
 func main() {
-	conn, err := grpc.NewClient(
+	orderServiceConn, err := grpc.NewClient(
 		orderServiceURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to orders grpc service: %v", err)
 	}
-	defer conn.Close()
+	defer orderServiceConn.Close()
+	log.Printf("dialing orderservice at %s", orderServiceURL)
+	authServiceConn, err := grpc.NewClient(authServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to connect to auth grpc service: %v", err)
+	}
+	log.Printf("dialing auth service at %s", authServiceURL)
 
-	orderClient := pb.NewOrderServiceClient(conn)
+	defer authServiceConn.Close()
+
+	orderClient := orderpb.NewOrderServiceClient(orderServiceConn)
+	authClient := authpb.NewAuthServiceClient(authServiceConn)
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
-	handler := handler.NewHTTPHandler(orderClient)
-	handler.RegisterRoutes(mux)
+	orderHandler := handler.NewOrderHTTPHandler(orderClient)
+	authHandler := handler.NewAuthHTTPHandler(authClient)
+	orderHandler.RegisterRoutes(mux)
+	authHandler.RegisterRoutes(mux)
 
 	log.Printf("Server running on port%v", addr)
 

@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 
-	pb "ecommerce-api/gen/order"
+	orderpb "ecommerce-api/gen/order"
 
 	_ "github.com/joho/godotenv/autoload"
 
@@ -24,7 +24,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	orderHandler := handler.NewOrderGRPCHandler()
 
-	pb.RegisterOrderServiceServer(grpcServer, orderHandler)
+	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 
 	log.Println("Orders grpc server running on port: 4444")
 	if err := grpcServer.Serve(l); err != nil {
