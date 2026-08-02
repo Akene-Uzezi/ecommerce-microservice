@@ -14,7 +14,7 @@ COPY ./stock/ ./stock
 WORKDIR /workspace/auth
 RUN go build -o ./bin/auth ./cmd
 
-FROM alping:latest
+FROM alpine:latest
 COPY --from=builder /bin/auth /bin/auth
 EXPOSE 5555
 
