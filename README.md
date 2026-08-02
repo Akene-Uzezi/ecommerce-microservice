@@ -6,19 +6,19 @@ A Go-based ecommerce microservices platform using gRPC for inter-service communi
 
 ```
 Client (HTTP/JSON)
-      │
-      ▼
+       │
+       ▼
 Gateway (:3000)
-      │
-      ├──gRPC──▶ Auth (:5555)
-      │              │
-      │              ▼
-      │         Auth DB (PostgreSQL :6433)
-      │
-      └──gRPC──▶ Orders (:4444)
-                     │
-                     ▼
-                Orders DB (PostgreSQL :5433)
+       │
+       ├──gRPC──▶ Auth (:5555)
+       │              │
+       │              ▼
+       │         Auth DB (PostgreSQL :6433)
+       │
+       └──gRPC──▶ Orders (:4444)
+                      │
+                      ▼
+                 Orders DB (PostgreSQL :5433)
 ```
 
 The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services. Services communicate directly via gRPC.
@@ -36,6 +36,7 @@ The Gateway exposes a REST/JSON interface and translates requests into gRPC call
 | Password Hashing | bcrypt (golang.org/x/crypto) |
 | Workspace | Go workspaces (`go.work`) |
 | Containerization | Docker, Docker Compose |
+| Hot Reload | [air](https://github.com/cosmtrek/air) |
 
 ## Project Structure
 
@@ -47,42 +48,55 @@ ecommerce-microservices/
 │   │   ├── order.proto      # OrderService: CreateOrder, GetOrder
 │   │   ├── payment.proto    # PaymentService: ProcessPayment
 │   │   └── stock.proto      # StockService: CheckStock, ReserveStock
-│   └── gen/                 # Generated Go gRPC code
+│   └── gen/                 # Generated Go gRPC code (empty until `make gen`)
 ├── auth/                    # Auth microservice
 │   ├── cmd/
 │   ├── internal/
 │   │   ├── db/              # PostgreSQL connection pool (pgxpool)
 │   │   │   ├── db.go        # Pool initialization with retry logic
-│   │   │   └── users.go     # User model (stub)
-│   │   └── handler/         # gRPC handler (stub)
-│   └── Dockerfile
+│   │   │   └── users.go     # User model (CreateUser stub)
+│   │   └── handler/         # gRPC handler
+│   │       └── grpc.go      # CreateUser stub, Login not implemented
+│   ├── Dockerfile
+│   └── .air.toml
 ├── gateway/                 # HTTP API Gateway
 │   ├── cmd/
 │   ├── internal/
 │   │   └── handler/         # HTTP handlers proxying to gRPC services
-│   │   ├── handler.go       # Order routes
-│   │   └── auth_handler.go  # Auth routes
-│   └── Dockerfile           # Empty scaffold
+│   │       ├── handler.go   # Order routes
+│   │       ├── auth_handler.go # Auth routes
+│   │       └── types.go     # Request payload types
+│   ├── Dockerfile           # Empty (not yet containerized)
+│   └── .air.toml
 ├── orders/                  # Orders microservice
 │   ├── cmd/
 │   ├── internal/
-│   │   └── handler/         # gRPC handler (stub response)
-│   └── Dockerfile
+│   │   └── handler/         # gRPC handler
+│   │       └── grpc.go      # CreateOrder stub response, GetOrder not implemented
+│   ├── Dockerfile
+│   └── .air.toml
 ├── payments/                # Payments microservice (scaffold)
 │   ├── go.mod
+│   ├── internal/
 │   └── Dockerfile           # Empty scaffold
 ├── stock/                   # Stock microservice (scaffold)
 │   ├── go.mod
+│   ├── internal/
 │   └── Dockerfile           # Empty scaffold
 ├── shared/                  # Common utilities
 │   ├── env.go               # GetEnvString(key, fallback)
 │   ├── json.go              # HTTP JSON helpers: WriteJSON, ReadJSON
-│   └── bcrypt.go            # Password hashing utilities
-├── scripts/                 # SQL init scripts
+│   ├── error.go             # HTTP error helpers: WriteErrorBadRequest, WriteErrorServerError
+│   ├── bcrypt.go            # Password hashing: HashPassword, ComparePassword
+│   └── go.mod
+├── scripts/                 # SQL init scripts and helper scripts
 │   ├── auth_init.sql
 │   ├── orders_init.sql
 │   ├── payments_init.sql
-│   └── stock_init.sql
+│   ├── stock_init.sql
+│   ├── commit.sh
+│   ├── logintodb.sh
+│   └── reset.sh
 ├── go.work                  # Go workspace file
 ├── go.mod                   # Root module (ecommerce-api)
 ├── Makefile                 # Protobuf generation targets
@@ -100,6 +114,8 @@ Canonical source of truth for all service interfaces. Contains `.proto` definiti
 - **payment.proto** — `PaymentService`: `ProcessPayment`
 - **stock.proto** — `StockService`: `CheckStock`, `ReserveStock`
 
+> Note: `api/gen/` is empty until protobuf stubs are generated with `make gen`.
+
 ### Gateway (`gateway/`)
 
 HTTP entrypoint that proxies requests to backend gRPC services.
@@ -107,16 +123,18 @@ HTTP entrypoint that proxies requests to backend gRPC services.
 - Listens on `:3000`
 - `GET /api/v1/ping` — health check
 - `POST /api/v1/orders` — creates an order via the Orders service
-- Auth routes registered (scaffold)
+- `POST /api/v1/create_user` — creates a user via the Auth service
+- Gateway Dockerfile is empty (not yet included in docker-compose)
 
 ### Auth Service (`auth/`)
 
 Handles user creation and authentication.
 
 - Listens on `:5555`
-- `CreateUser` — handler stub (returns nil, nil; DB pool initialized with retry logic)
-- `Login` — defined in proto, handler not yet implemented
+- `CreateUser` — handler stub (returns nil; DB pool initialized with retry logic)
+- `Login` — not yet implemented
 - Database: `auth_db` on `:6433` with `pgx/v5` connection pooling
+- Uses `os.Getenv` for configuration (no godotenv autoload)
 
 ### Orders Service (`orders/`)
 
@@ -131,9 +149,17 @@ Manages order creation and retrieval.
 
 Module scaffold only. Intended to handle `ProcessPayment(order_id, customer_id, amount)`.
 
+- `go.mod` present
+- No Go source files yet
+- Dockerfile is empty
+
 ### Stock Service (`stock/`)
 
 Module scaffold only. Intended to handle `CheckStock(product_id, quantity)` and `ReserveStock(order_id, items)`.
+
+- `go.mod` present
+- No Go source files yet
+- Dockerfile is empty
 
 ### Shared (`shared/`)
 
@@ -141,6 +167,7 @@ Common utilities:
 
 - `env.go` — `GetEnvString(key, fallback)`
 - `json.go` — HTTP JSON helpers: `WriteJSON`, `ReadJSON`
+- `error.go` — HTTP error helpers: `WriteErrorBadRequest`, `WriteErrorServerError`
 - `bcrypt.go` — Password hashing: `HashPassword`, `ComparePassword`
 
 ## Prerequisites
@@ -150,6 +177,7 @@ Common utilities:
 - protoc-gen-go (`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`)
 - protoc-gen-go-grpc (`go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest`)
 - Docker & Docker Compose (for running services with databases)
+- [air](https://github.com/cosmtrek/air) (optional, for hot reload during development)
 
 ## Getting Started
 
@@ -174,6 +202,14 @@ cd orders && go run ./cmd
 
 # Terminal 3 — Gateway
 cd gateway && go run ./cmd
+```
+
+Or use `air` for hot reloading:
+
+```bash
+cd auth && air
+cd orders && air
+cd gateway && air
 ```
 
 ### 3. Run with Docker Compose
@@ -217,16 +253,16 @@ The project uses a Go workspace (`go.work`) to allow cross-module imports. Run `
 
 ### Environment Variables
 
-Services use `.env` files via `github.com/joho/godotenv/autoload`. Key variables:
+Services use environment variables via `os.Getenv` or `.env` files via `github.com/joho/godotenv/autoload` where noted. Key variables:
 
-| Variable | Default | Service |
-|----------|---------|---------|
-| `GATEWAY_PORT` | `3000` | gateway |
-| `ORDERS_PORT` | `4444` | orders |
-| `AUTH_PORT` | `5555` | auth |
-| `ORDER_SERVICE_URL` | `localhost:4444` | gateway |
-| `AUTH_SERVICE_URL` | `localhost:5555` | gateway |
-| `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth |
+| Variable | Default | Service | Loaded via |
+|----------|---------|---------|------------|
+| `GATEWAY_PORT` | `3000` | gateway | godotenv |
+| `ORDERS_PORT` | `4444` | orders | godotenv |
+| `AUTH_PORT` | `5555` | auth | os.Getenv |
+| `ORDER_SERVICE_URL` | `localhost:4444` | gateway | godotenv |
+| `AUTH_SERVICE_URL` | `localhost:5555` | gateway | godotenv |
+| `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth | os.Getenv |
 
 ## Roadmap
 
