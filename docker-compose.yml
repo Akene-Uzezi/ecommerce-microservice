@@ -50,8 +50,12 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
+    environment:
+      - AUTH_DB_CONN_STR=postgres://auth:auth@auth-db:5432/auth_db
     ports:
       - "5555:5555"
+    env_file:
+      - ./auth/.env
 
 volumes:
   orders_data:
