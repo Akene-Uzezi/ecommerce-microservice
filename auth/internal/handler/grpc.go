@@ -3,6 +3,7 @@ package handler
 
 import (
 	"context"
+	"ecommerce-auth/internal/db"
 
 	authpb "ecommerce-api/gen/auth"
 
@@ -15,7 +16,9 @@ type AuthGRPCHanlder struct {
 }
 
 func NewAuthGRPCHandler() *AuthGRPCHanlder {
-	return &AuthGRPCHanlder{}
+	return &AuthGRPCHanlder{
+		pool: db.InitPool(),
+	}
 }
 
 func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.CreateUserResponse, error) {

@@ -8,7 +8,7 @@ type UserModel struct {
 }
 
 type User struct {
-	email    string `json:"email"`
-	password string `json:"password"`
-	name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Name     string `json:"name"`
 }

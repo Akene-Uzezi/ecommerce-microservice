@@ -15,7 +15,7 @@ type Models struct {
 
 func NewModels(pool *pgxpool.Pool) *Models {
 	return &Models{
-		UserModel: {DB: pool},
+		UserModel: UserModel{DB: pool},
 	}
 }
 
