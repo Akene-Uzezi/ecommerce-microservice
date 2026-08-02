@@ -4,6 +4,7 @@ package handler
 import (
 	"context"
 	"ecommerce-auth/internal/db"
+	"log"
 
 	authpb "ecommerce-api/gen/auth"
 
@@ -16,10 +17,15 @@ type AuthGRPCHanlder struct {
 }
 
 func NewAuthGRPCHandler() *AuthGRPCHanlder {
+	pool, err := db.InitPool()
+	if err != nil {
+		log.Fatalf("failed to init db pool: %s", err)
+	}
 	return &AuthGRPCHanlder{
-		pool: db.InitPool(),
+		pool: pool,
 	}
 }
 
 func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.CreateUserResponse, error) {
+	return nil, nil
 }
