@@ -61,6 +61,12 @@ services:
     build:
       context: .
       dockerfile: gateway/Dockerfile
+    depends_on:
+      - auth
+      - orders
+    environment:
+      - AUTH_SERVICE_URL=auth:5555
+      - ORDER_SERVICE_URL=orders:4444
     ports:
       - "3000:3000"
     env_file:
