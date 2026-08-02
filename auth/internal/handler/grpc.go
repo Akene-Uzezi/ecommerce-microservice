@@ -3,13 +3,15 @@ package handler
 
 import (
 	"context"
-	"log"
 
 	authpb "ecommerce-api/gen/auth"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AuthGRPCHanlder struct {
 	authpb.UnimplementedAuthServiceServer
+	pool *pgxpool.Pool
 }
 
 func NewAuthGRPCHandler() *AuthGRPCHanlder {
@@ -17,10 +19,4 @@ func NewAuthGRPCHandler() *AuthGRPCHanlder {
 }
 
 func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.CreateUserResponse, error) {
-	log.Println("received create user request")
-
-	return &authpb.CreateUserResponse{
-		Email: "test@test.com",
-		Name:  "test name",
-	}, nil
 }

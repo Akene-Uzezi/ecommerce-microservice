@@ -1,0 +1,8 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

@@ -9,8 +9,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type Models struct {
+	UserModel UserModel
+}
+
+func NewModels(pool *pgxpool.Pool) *Models {
+	return &Models{
+		UserModel: {DB: pool},
+	}
+}
+
 func InitPool() (*pgxpool.Pool, error) {
-	authDbConnStr := shared.GetEnvString("AUTH_DB_CONN_STR", "some url")
+	authDbConnStr := shared.GetEnvString("AUTH_DB_CONN_STR", "postgres://auth:auth@localhost:6433/auth_db")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	config, err := pgxpool.ParseConfig(authDbConnStr)
