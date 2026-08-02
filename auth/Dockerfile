@@ -3,7 +3,6 @@ FROM golang:1.26-alpine AS builder
 WORKDIR /workdir
 
 COPY go.work go.work.sum ./
-
 COPY ./api/ ./api
 COPY ./auth/ ./auth
 COPY ./gateway/ ./gateway
