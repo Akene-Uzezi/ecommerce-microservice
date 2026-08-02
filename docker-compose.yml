@@ -35,7 +35,7 @@ services:
     ports:
       - "6433:5432"
     volumes:
-      - auth_db:/var/lib/postgresql/data
+      - auth_data:/var/lib/postgresql/data
       - ./scripts/auth_init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U auth -d auth_db"]
@@ -59,4 +59,4 @@ services:
 
 volumes:
   orders_data:
-  auth_db:
+  auth_data:

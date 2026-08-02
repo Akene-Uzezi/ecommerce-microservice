@@ -3,7 +3,6 @@ package handler
 
 import (
 	shared "ecommerce-shared"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -29,15 +28,10 @@ func (h *handler) ping(w http.ResponseWriter, r *http.Request) {
 	_ = shared.WriteJSON(w, http.StatusOK, "pong")
 }
 
-type CreateOrderPayload struct {
-	CustomerID string               `json:"customer_id"`
-	Items      []*orderpb.OrderItem `json:"items"`
-}
-
 func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	var body CreateOrderPayload
 	if err := shared.ReadJSON(r, body); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %s", err), http.StatusBadRequest)
+		shared.WriteErrorBadRequest(w, "Invalid request body", err)
 		return
 	}
 

@@ -7,7 +7,7 @@ echo "removing all volumes"
 docker volume rm $(docker volume ls -q)
 
 read -p "Do you want to restart containers(y/n): " choice
-if ["$choice" = "y"]; then
+if [ "$choice" = "y" ]; then
   docker compose up
 else
   echo "restart stopped by user"

@@ -19,10 +19,27 @@ func NewAuthHTTPHandler(client authpb.AuthServiceClient) *AuthHTTPHandler {
 }
 
 func (h *AuthHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/create/ping", h.helperPing)
+	mux.HandleFunc("POST /api/v1/create_user", h.createUser)
 }
 
-func (h *AuthHTTPHandler) helperPing(w http.ResponseWriter, r *http.Request) {
-	log.Println("received request from gateway")
-	_ = shared.WriteJSON(w, http.StatusOK, "test")
+func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
+	var requestbody CreateUserPayload
+	if err := shared.ReadJSON(r, requestbody); err != nil {
+		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
+		return
+	}
+
+	ctx := r.Context()
+	res, err := h.authClient.CreateUser(ctx, &authpb.CreateUserRequest{
+		Email:    requestbody.Email,
+		Password: requestbody.Password,
+		Name:     requestbody.Name,
+	})
+	if err != nil {
+		log.Printf("grpc create user failed: %v", err)
+		shared.WriteErrorServerError(w, "internal server error", err)
+		return
+	}
+
+	_ = shared.WriteJSON(w, http.StatusCreated, res)
 }
