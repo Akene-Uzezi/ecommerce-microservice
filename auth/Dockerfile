@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM golang:1.26-alpine AS builder
 
 WORKDIR /workspace
@@ -12,7 +13,9 @@ COPY ./shared/ ./shared
 COPY ./stock/ ./stock
 
 WORKDIR /workspace/auth
-RUN go build -o /bin/auth ./cmd
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  go build -o /bin/auth ./cmd
 
 FROM alpine:latest
 COPY --from=builder /bin/auth /bin/auth
