@@ -12,7 +12,7 @@ COPY ./shared/ ./shared
 COPY ./stock/ ./stock
 
 WORKDIR /workspace/auth
-RUN go build -o ./bin/auth ./cmd
+RUN go build -o /bin/auth ./cmd
 
 FROM alpine:latest
 COPY --from=builder /bin/auth /bin/auth
