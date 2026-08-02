@@ -28,11 +28,16 @@ func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
 		return
 	}
+	hashPassword, err := shared.HashPassword(requestbody.Password)
+	if err != nil {
+		shared.WriteErrorServerError(w, "Failed to hashpassword", err)
+		return
+	}
 
 	ctx := r.Context()
 	res, err := h.authClient.CreateUser(ctx, &authpb.CreateUserRequest{
 		Email:    requestbody.Email,
-		Password: requestbody.Password,
+		Password: hashPassword,
 		Name:     requestbody.Name,
 	})
 	if err != nil {
