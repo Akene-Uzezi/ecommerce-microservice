@@ -57,6 +57,15 @@ services:
     env_file:
       - ./auth/.env
 
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./gateway/.env
+
 volumes:
   orders_data:
   auth_data:
