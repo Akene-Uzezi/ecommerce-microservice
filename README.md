@@ -6,19 +6,19 @@ A Go-based ecommerce microservices platform using gRPC for inter-service communi
 
 ```
 Client (HTTP/JSON)
-     │
-     ▼
+      │
+      ▼
 Gateway (:3000)
-     │
-     ├──gRPC──▶ Auth (:5555)
-     │              │
-     │              ▼
-     │         Auth DB (PostgreSQL :6433)
-     │
-     └──gRPC──▶ Orders (:4444)
-                    │
-                    ▼
-               Orders DB (PostgreSQL :5433)
+      │
+      ├──gRPC──▶ Auth (:5555)
+      │              │
+      │              ▼
+      │         Auth DB (PostgreSQL :6433)
+      │
+      └──gRPC──▶ Orders (:4444)
+                     │
+                     ▼
+                Orders DB (PostgreSQL :5433)
 ```
 
 The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services. Services communicate directly via gRPC.
@@ -32,6 +32,8 @@ The Gateway exposes a REST/JSON interface and translates requests into gRPC call
 | Serialization | Protocol Buffers |
 | Code Generation | protoc, protoc-gen-go, protoc-gen-go-grpc |
 | Database | PostgreSQL 16 |
+| DB Driver | pgx/v5 with connection pooling |
+| Password Hashing | bcrypt (golang.org/x/crypto) |
 | Workspace | Go workspaces (`go.work`) |
 | Containerization | Docker, Docker Compose |
 
@@ -49,27 +51,34 @@ ecommerce-microservices/
 ├── auth/                    # Auth microservice
 │   ├── cmd/
 │   ├── internal/
-│   │   ├── db/              # PostgreSQL connection pool
-│   │   └── handler/         # gRPC handler
+│   │   ├── db/              # PostgreSQL connection pool (pgxpool)
+│   │   │   ├── db.go        # Pool initialization with retry logic
+│   │   │   └── users.go     # User model (stub)
+│   │   └── handler/         # gRPC handler (stub)
 │   └── Dockerfile
 ├── gateway/                 # HTTP API Gateway
 │   ├── cmd/
 │   ├── internal/
 │   │   └── handler/         # HTTP handlers proxying to gRPC services
-│   └── Dockerfile
+│   │   ├── handler.go       # Order routes
+│   │   └── auth_handler.go  # Auth routes
+│   └── Dockerfile           # Empty scaffold
 ├── orders/                  # Orders microservice
 │   ├── cmd/
 │   ├── internal/
-│   │   └── handler/         # gRPC handler
+│   │   └── handler/         # gRPC handler (stub response)
 │   └── Dockerfile
 ├── payments/                # Payments microservice (scaffold)
-│   └── Dockerfile
+│   ├── go.mod
+│   └── Dockerfile           # Empty scaffold
 ├── stock/                   # Stock microservice (scaffold)
-│   └── Dockerfile
+│   ├── go.mod
+│   └── Dockerfile           # Empty scaffold
 ├── shared/                  # Common utilities
 │   ├── env.go               # GetEnvString(key, fallback)
-│   └── json.go              # HTTP JSON helpers: WriteJSON, ReadJSON
-├── scripts/                 # SQL init scripts, commit helper
+│   ├── json.go              # HTTP JSON helpers: WriteJSON, ReadJSON
+│   └── bcrypt.go            # Password hashing utilities
+├── scripts/                 # SQL init scripts
 │   ├── auth_init.sql
 │   ├── orders_init.sql
 │   ├── payments_init.sql
@@ -98,15 +107,16 @@ HTTP entrypoint that proxies requests to backend gRPC services.
 - Listens on `:3000`
 - `GET /api/v1/ping` — health check
 - `POST /api/v1/orders` — creates an order via the Orders service
+- Auth routes registered (scaffold)
 
 ### Auth Service (`auth/`)
 
 Handles user creation and authentication.
 
 - Listens on `:5555`
-- `CreateUser` — stub response with hardcoded values
+- `CreateUser` — handler stub (returns nil, nil; DB pool initialized with retry logic)
 - `Login` — defined in proto, handler not yet implemented
-- Database: `auth_db` on `:6433`
+- Database: `auth_db` on `:6433` with `pgx/v5` connection pooling
 
 ### Orders Service (`orders/`)
 
@@ -115,7 +125,7 @@ Manages order creation and retrieval.
 - Listens on `:4444`
 - `CreateOrder` — returns a stub response (not yet connected to stock/payment flow)
 - `GetOrder` — defined in proto but not yet implemented
-- Database: `orders_db` on `:5433`
+- Database: `orders_db` on `:5433` (init script exists, service not yet integrated)
 
 ### Payments Service (`payments/`)
 
@@ -131,6 +141,7 @@ Common utilities:
 
 - `env.go` — `GetEnvString(key, fallback)`
 - `json.go` — HTTP JSON helpers: `WriteJSON`, `ReadJSON`
+- `bcrypt.go` — Password hashing: `HashPassword`, `ComparePassword`
 
 ## Prerequisites
 
@@ -176,7 +187,8 @@ This starts:
 - `auth-db` on `:6433`
 - `orders` service on `:4444`
 - `auth` service on `:5555`
-- `gateway` on `:3000`
+
+> Note: The gateway, payments, and stock services are not yet included in docker-compose.
 
 ### 4. Test
 
@@ -214,19 +226,21 @@ Services use `.env` files via `github.com/joho/godotenv/autoload`. Key variables
 | `AUTH_PORT` | `5555` | auth |
 | `ORDER_SERVICE_URL` | `localhost:4444` | gateway |
 | `AUTH_SERVICE_URL` | `localhost:5555` | gateway |
-| `AUTH_DB_CONN_STR` | — | auth |
-| `ORDERS_DB_CONN_STR` | — | orders |
+| `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth |
 
 ## Roadmap
 
 - [x] Protobuf API contracts
 - [x] Orders service (skeleton)
-- [x] Auth service (skeleton)
+- [x] Auth service (skeleton) with DB connection pool
 - [x] Gateway with HTTP-to-gRPC translation
 - [x] Docker / docker-compose setup
 - [ ] Stock service implementation
 - [ ] Payments service implementation
-- [ ] Database integration (orders, auth)
+- [ ] Orders DB integration
+- [ ] Auth service full implementation (CreateUser, Login)
+- [ ] Gateway Dockerfile
+- [ ] Payments/Stock Dockerfiles
 - [ ] Service discovery / config
 - [ ] TLS / production hardening
 - [ ] Testing suite (unit + integration)
