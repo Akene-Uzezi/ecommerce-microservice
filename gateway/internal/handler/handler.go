@@ -30,7 +30,7 @@ func (h *handler) ping(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	var body CreateOrderPayload
-	if err := shared.ReadJSON(r, body); err != nil {
+	if err := shared.ReadJSON(r, &body); err != nil {
 		shared.WriteErrorBadRequest(w, "Invalid request body", err)
 		return
 	}

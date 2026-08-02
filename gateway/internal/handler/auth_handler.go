@@ -24,7 +24,7 @@ func (h *AuthHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
 
 func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 	var requestbody CreateUserPayload
-	if err := shared.ReadJSON(r, requestbody); err != nil {
+	if err := shared.ReadJSON(r, &requestbody); err != nil {
 		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
 		return
 	}
