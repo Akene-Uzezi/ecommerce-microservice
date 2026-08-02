@@ -1,6 +1,6 @@
 FROM golang:1.26-alpine AS builder
 
-WORKDIR /workdir
+WORKDIR /workspace
 
 COPY go.work go.work.sum ./
 COPY ./api/ ./api
