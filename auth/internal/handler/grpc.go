@@ -7,13 +7,11 @@ import (
 	"log"
 
 	authpb "ecommerce-api/gen/auth"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AuthGRPCHanlder struct {
 	authpb.UnimplementedAuthServiceServer
-	pool *pgxpool.Pool
+	models *db.Models
 }
 
 func NewAuthGRPCHandler() *AuthGRPCHanlder {
@@ -22,7 +20,7 @@ func NewAuthGRPCHandler() *AuthGRPCHanlder {
 		log.Fatalf("failed to init db pool: %s", err)
 	}
 	return &AuthGRPCHanlder{
-		pool: pool,
+		models: db.NewModels(pool),
 	}
 }
 
