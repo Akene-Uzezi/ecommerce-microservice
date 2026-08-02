@@ -38,7 +38,7 @@ services:
       - auth_db:/var/lib/postgresql/data
       - ./scripts/auth_init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orders"]
+      test: ["CMD-SHELL", "pg_isready -U auth"]
       interval: 5s
       timeout: 5s
       retries: 5
