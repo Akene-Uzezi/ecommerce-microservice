@@ -4,24 +4,34 @@ A Go-based ecommerce microservices platform using gRPC for inter-service communi
 
 ## Architecture
 
-```
-Client (HTTP/JSON)
-       │
-       ▼
-Gateway (:3000)
-       │
-       ├──gRPC──▶ Auth (:5555)
-       │              │
-       │              ▼
-       │         Auth DB (PostgreSQL :6433)
-       │
-       └──gRPC──▶ Orders (:4444)
-                      │
-                      ▼
-                 Orders DB (PostgreSQL :5433)
+```mermaid
+graph TB
+    Client[Client]
+    Gateway[Gateway :3000]
+    Auth[Auth Service :5555]
+    Orders[Orders Service :4444]
+    Payments[Payments Service]
+    Stock[Stock Service]
+    AuthDB[(Auth DB :6433)]
+    OrdersDB[(Orders DB :5433)]
+    PaymentDB[(Payments DB)]
+    StockDB[(Stock DB)]
+
+    Client -->|HTTP/JSON| Gateway
+    Gateway -->|gRPC| Auth
+    Gateway -->|gRPC| Orders
+    Gateway -->|gRPC| Payments
+    Gateway -->|gRPC| Stock
+
+    Auth --> AuthDB
+    Orders --> OrdersDB
+    Payments --> PaymentDB
+    Stock --> StockDB
 ```
 
 The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services. Services communicate directly via gRPC.
+
+For a more detailed architecture description, see [architecture.md](architecture.md).
 
 ## Tech Stack
 
@@ -66,7 +76,7 @@ ecommerce-microservices/
 │   │       ├── handler.go   # Order routes
 │   │       ├── auth_handler.go # Auth routes
 │   │       └── types.go     # Request payload types
-│   ├── Dockerfile           # Empty (not yet containerized)
+│   ├── Dockerfile           # Multi-stage build
 │   └── .air.toml
 ├── orders/                  # Orders microservice
 │   ├── cmd/
@@ -124,7 +134,7 @@ HTTP entrypoint that proxies requests to backend gRPC services.
 - `GET /api/v1/ping` — health check
 - `POST /api/v1/orders` — creates an order via the Orders service
 - `POST /api/v1/create_user` — creates a user via the Auth service
-- Gateway Dockerfile is empty (not yet included in docker-compose)
+- Environment: `gateway/.env.example` → copy to `gateway/.env`
 
 ### Auth Service (`auth/`)
 
@@ -134,6 +144,7 @@ Handles user creation and authentication.
 - `CreateUser` — handler stub (returns nil; DB pool initialized with retry logic)
 - `Login` — not yet implemented
 - Database: `auth_db` on `:6433` with `pgx/v5` connection pooling
+- Environment: `auth/.env.example` → copy to `auth/.env`
 - Uses `os.Getenv` for configuration (no godotenv autoload)
 
 ### Orders Service (`orders/`)
@@ -144,6 +155,7 @@ Manages order creation and retrieval.
 - `CreateOrder` — returns a stub response (not yet connected to stock/payment flow)
 - `GetOrder` — defined in proto but not yet implemented
 - Database: `orders_db` on `:5433` (init script exists, service not yet integrated)
+- Environment: `orders/.env.example` → copy to `orders/.env`
 
 ### Payments Service (`payments/`)
 
@@ -212,7 +224,17 @@ cd orders && air
 cd gateway && air
 ```
 
-### 3. Run with Docker Compose
+### 3. Configure Environment
+
+Copy `.env.example` to `.env` in each service directory:
+
+```bash
+cp gateway/.env.example gateway/.env
+cp auth/.env.example auth/.env
+cp orders/.env.example orders/.env
+```
+
+### 4. Run with Docker Compose
 
 ```bash
 docker compose up --build
@@ -223,10 +245,11 @@ This starts:
 - `auth-db` on `:6433`
 - `orders` service on `:4444`
 - `auth` service on `:5555`
+- `gateway` service on `:3000`
 
-> Note: The gateway, payments, and stock services are not yet included in docker-compose.
+> Note: The payments and stock services are not yet included in docker-compose.
 
-### 4. Test
+### 5. Test
 
 ```bash
 # Health check
@@ -253,7 +276,7 @@ The project uses a Go workspace (`go.work`) to allow cross-module imports. Run `
 
 ### Environment Variables
 
-Services use environment variables via `os.Getenv` or `.env` files via `github.com/joho/godotenv/autoload` where noted. Key variables:
+Each service reads configuration from environment variables. Copy the `.env.example` file in each service directory to `.env` and adjust values as needed.
 
 | Variable | Default | Service | Loaded via |
 |----------|---------|---------|------------|
@@ -261,7 +284,7 @@ Services use environment variables via `os.Getenv` or `.env` files via `github.c
 | `ORDERS_PORT` | `4444` | orders | godotenv |
 | `AUTH_PORT` | `5555` | auth | os.Getenv |
 | `ORDER_SERVICE_URL` | `localhost:4444` | gateway | godotenv |
-| `AUTH_SERVICE_URL` | `localhost:5555` | gateway | godotenv |
+| `AUTH_SERVICE_URL` | `localhost:5555` | gateway | os.Getenv |
 | `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth | os.Getenv |
 
 ## Roadmap
@@ -275,8 +298,6 @@ Services use environment variables via `os.Getenv` or `.env` files via `github.c
 - [ ] Payments service implementation
 - [ ] Orders DB integration
 - [ ] Auth service full implementation (CreateUser, Login)
-- [ ] Gateway Dockerfile
-- [ ] Payments/Stock Dockerfiles
 - [ ] Service discovery / config
 - [ ] TLS / production hardening
 - [ ] Testing suite (unit + integration)
