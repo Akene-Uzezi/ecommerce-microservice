@@ -9,6 +9,8 @@ import (
 
 	authpb "ecommerce-api/gen/auth"
 
+	_ "github.com/joho/godotenv/autoload"
+
 	"google.golang.org/grpc"
 )
 
