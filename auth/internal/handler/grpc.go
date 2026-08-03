@@ -40,3 +40,7 @@ func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUser
 	}
 	return response, nil
 }
+
+func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.LoginRequest, error) {
+	return nil, nil
+}
