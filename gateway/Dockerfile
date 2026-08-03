@@ -1,9 +1,18 @@
-# syntax=docker/dockerfile:1
 FROM golang:1.26-alpine AS builder
 
 WORKDIR /workspace
 
 COPY go.work go.work.sum ./
+COPY api/go.mod api/go.sum ./api/
+COPY auth/go.mod ./auth/
+COPY gateway/go.mod ./gateway/
+COPY orders/go.mod ./orders/
+COPY payments/go.mod ./payments/
+COPY shared/go.mod shared/go.sum ./shared/
+COPY stock/go.mod ./stock/
+
+RUN go mod download
+
 COPY ./api/ ./api
 COPY ./auth/ ./auth
 COPY ./gateway/ ./gateway
@@ -13,9 +22,7 @@ COPY ./shared/ ./shared
 COPY ./stock/ ./stock
 
 WORKDIR /workspace/gateway
-RUN --mount=type=cache,target=/go/pkg/mod \
-  --mount=type=cache,target=/root/.cache/go-build \
-  go build -o /bin/gateway ./cmd
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/gateway ./cmd
 
 FROM alpine:latest
 COPY --from=builder /bin/gateway /bin/gateway
