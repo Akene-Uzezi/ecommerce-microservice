@@ -27,11 +27,13 @@ func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 	var requestbody CreateUserPayload
 	if err := shared.ReadJSON(r, &requestbody); err != nil {
 		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
+		shared.LogBadRequest(r.Method, r.RequestURI)
 		return
 	}
 	hashPassword, err := shared.HashPassword(requestbody.Password)
 	if err != nil {
 		shared.WriteErrorServerError(w, "Failed to hashpassword", err)
+		shared.LogInternalServerError(r.Method, r.RequestURI)
 		return
 	}
 
@@ -44,16 +46,19 @@ func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("grpc create user failed: %v", err)
 		shared.WriteErrorServerError(w, "internal server error", err)
+		shared.LogInternalServerError(r.Method, r.RequestURI)
 		return
 	}
 
 	_ = shared.WriteJSON(w, http.StatusCreated, res)
+	shared.LogOK(r.Method, r.RequestURI)
 }
 
 func (h *AuthHTTPHandler) login(w http.ResponseWriter, r *http.Request) {
 	var requestbody LoginRequest
 	if err := shared.ReadJSON(r, &requestbody); err != nil {
 		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
+		shared.LogBadRequest(r.Method, r.RequestURI)
 		return
 	}
 
@@ -64,8 +69,10 @@ func (h *AuthHTTPHandler) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("grpc failed to get user by email: %v", err)
 		shared.WriteErrorServerError(w, "internal server error", err)
+		shared.LogInternalServerError(r.Method, r.RequestURI)
 		return
 	}
 
-	_ = shared.WriteJSON(w, http.StatusCreated, res)
+	_ = shared.WriteJSON(w, http.StatusOK, res)
+	shared.LogOK(r.Method, r.RequestURI)
 }

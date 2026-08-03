@@ -26,12 +26,14 @@ func (h *handler) RegisterRoutes(mux *http.ServeMux) {
 
 func (h *handler) ping(w http.ResponseWriter, r *http.Request) {
 	_ = shared.WriteJSON(w, http.StatusOK, "pong")
+	shared.LogOK(r.Method, r.RequestURI)
 }
 
 func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	var body CreateOrderPayload
 	if err := shared.ReadJSON(r, &body); err != nil {
 		shared.WriteErrorBadRequest(w, "Invalid request body", err)
+		shared.LogBadRequest(r.Method, r.RequestURI)
 		return
 	}
 
@@ -42,10 +44,13 @@ func (h *handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("grpc create order failed: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
+		shared.LogInternalServerError(r.Method, r.RequestURI)
 		return
 	}
 
 	if err := shared.WriteJSON(w, http.StatusCreated, res); err != nil {
 		log.Printf("failed to write json: %v", err)
+		return
 	}
+	shared.LogOK(r.Method, r.RequestURI)
 }
