@@ -1,6 +1,10 @@
 package handler
 
-import orderpb "ecommerce-api/gen/order"
+import (
+	orderpb "ecommerce-api/gen/order"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type CreateUserPayload struct {
 	Email    string `json:"email"`
@@ -16,4 +20,10 @@ type CreateOrderPayload struct {
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type Claims struct {
+	Email string
+	Name  string
+	jwt.RegisteredClaims
 }

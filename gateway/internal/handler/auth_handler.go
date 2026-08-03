@@ -2,6 +2,7 @@ package handler
 
 import (
 	shared "ecommerce-shared"
+	"errors"
 	"log"
 	"net/http"
 
@@ -63,7 +64,7 @@ func (h *AuthHTTPHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	res, err := h.authClient.GetUserByEmail(ctx, &authpb.GetUserRequest{
+	user, err := h.authClient.GetUserByEmail(ctx, &authpb.GetUserRequest{
 		Email: requestbody.Email,
 	})
 	if err != nil {
@@ -73,6 +74,16 @@ func (h *AuthHTTPHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = shared.WriteJSON(w, http.StatusOK, res)
-	shared.LogOK(r.Method, r.RequestURI)
+	if user == nil {
+		_ = shared.WriteJSON(w, http.StatusNotFound, "User not found")
+		shared.LogNotFound(r.Method, r.RequestURI)
+		return
+	}
+
+	matchPassword := shared.ComparePassword(user.Password, requestbody.Password)
+	if !matchPassword {
+		shared.WriteErrorBadRequest(w, "Invalid credentials", errors.New("invalid credentials were passed"))
+		shared.LogBadRequest(r.Method, r.RequestURI)
+		return
+	}
 }

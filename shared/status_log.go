@@ -16,3 +16,7 @@ func LogBadRequest(method, url string) {
 func LogInternalServerError(method, url string) {
 	log.Printf("%s %s %d", method, url, http.StatusInternalServerError)
 }
+
+func LogNotFound(method, url string) {
+	log.Printf("%s %s %d", method, url, http.StatusNotFound)
+}
