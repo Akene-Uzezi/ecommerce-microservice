@@ -54,37 +54,44 @@ For a more detailed architecture description, see [architecture.md](architecture
 ecommerce-microservices/
 ├── api/                     # Shared API contracts (protobuf definitions + generated stubs)
 │   ├── proto/               # .proto source files
-│   │   ├── auth.proto       # AuthService: CreateUser, Login
+│   │   ├── auth.proto       # AuthService: CreateUser, Login, GetUserByEmail
 │   │   ├── order.proto      # OrderService: CreateOrder, GetOrder
 │   │   ├── payment.proto    # PaymentService: ProcessPayment
 │   │   └── stock.proto      # StockService: CheckStock, ReserveStock
-│   └── gen/                 # Generated Go gRPC code (empty until `make gen`)
+│   └── gen/                 # Generated Go gRPC code (run `make gen` to generate)
 ├── auth/                    # Auth microservice
 │   ├── cmd/
+│   │   └── main.go          # gRPC server entry point
 │   ├── internal/
 │   │   ├── db/              # PostgreSQL connection pool (pgxpool)
 │   │   │   ├── db.go        # Pool initialization with retry logic
-│   │   │   └── users.go     # User model (CreateUser stub)
+│   │   │   └── users.go     # User model (CreateUser, GetUserByEmail)
 │   │   └── handler/         # gRPC handler
-│   │       └── grpc.go      # CreateUser stub, Login not implemented
+│   │       └── grpc.go      # CreateUser, GetUserByEmail implemented; Login stub
 │   ├── Dockerfile
-│   └── .air.toml
+│   ├── .air.toml
+│   └── .env.example
 ├── gateway/                 # HTTP API Gateway
 │   ├── cmd/
+│   │   └── main.go          # HTTP server entry point
 │   ├── internal/
 │   │   └── handler/         # HTTP handlers proxying to gRPC services
 │   │       ├── handler.go   # Order routes
-│   │       ├── auth_handler.go # Auth routes
+│   │       ├── auth_handler.go # Auth routes (create_user, login)
 │   │       └── types.go     # Request payload types
 │   ├── Dockerfile           # Multi-stage build
-│   └── .air.toml
+│   ├── .air.toml
+│   ├── .env.example
+│   └── .env
 ├── orders/                  # Orders microservice
 │   ├── cmd/
+│   │   └── main.go          # gRPC server entry point
 │   ├── internal/
 │   │   └── handler/         # gRPC handler
-│   │       └── grpc.go      # CreateOrder stub response, GetOrder not implemented
+│   │       └── grpc.go      # CreateOrder returns stub response
 │   ├── Dockerfile
-│   └── .air.toml
+│   ├── .air.toml
+│   └── .env.example
 ├── payments/                # Payments microservice (scaffold)
 │   ├── go.mod
 │   ├── internal/
@@ -119,7 +126,7 @@ ecommerce-microservices/
 
 Canonical source of truth for all service interfaces. Contains `.proto` definitions and generated Go stubs.
 
-- **auth.proto** — `AuthService`: `CreateUser`, `Login`
+- **auth.proto** — `AuthService`: `CreateUser`, `Login`, `GetUserByEmail`
 - **order.proto** — `OrderService`: `CreateOrder`, `GetOrder`
 - **payment.proto** — `PaymentService`: `ProcessPayment`
 - **stock.proto** — `StockService`: `CheckStock`, `ReserveStock`
@@ -131,29 +138,34 @@ Canonical source of truth for all service interfaces. Contains `.proto` definiti
 HTTP entrypoint that proxies requests to backend gRPC services.
 
 - Listens on `:3000`
-- `GET /api/v1/ping` — health check
-- `POST /api/v1/orders` — creates an order via the Orders service
-- `POST /api/v1/create_user` — creates a user via the Auth service
-- Environment: `gateway/.env.example` → copy to `gateway/.env`
+- **Routes**:
+  - `GET /api/v1/ping` — health check
+  - `POST /api/v1/create_user` — creates a user via the Auth service
+  - `POST /api/v1/login` — authenticates a user
+  - `POST /api/v1/orders` — creates an order via the Orders service
+- Environment files: `gateway/.env.example` → copy to `gateway/.env`
 
 ### Auth Service (`auth/`)
 
 Handles user creation and authentication.
 
 - Listens on `:5555`
-- `CreateUser` — handler stub (returns nil; DB pool initialized with retry logic)
-- `Login` — not yet implemented
+- **gRPC Methods**:
+  - `CreateUser` — creates a user (password hashed via bcrypt)
+  - `GetUserByEmail` — retrieves user by email
+  - `Login` — stub (returns nil response)
 - Database: `auth_db` on `:6433` with `pgx/v5` connection pooling
 - Environment: `auth/.env.example` → copy to `auth/.env`
-- Uses `os.Getenv` for configuration (no godotenv autoload)
+- Uses `godotenv/autoload` for configuration loading
 
 ### Orders Service (`orders/`)
 
 Manages order creation and retrieval.
 
 - Listens on `:4444`
-- `CreateOrder` — returns a stub response (not yet connected to stock/payment flow)
-- `GetOrder` — defined in proto but not yet implemented
+- **gRPC Methods**:
+  - `CreateOrder` — returns a stub response (not yet connected to stock/payment flow)
+  - `GetOrder` — defined in proto but not yet implemented
 - Database: `orders_db` on `:5433` (init script exists, service not yet integrated)
 - Environment: `orders/.env.example` → copy to `orders/.env`
 
@@ -201,7 +213,25 @@ make gen
 
 This generates Go gRPC stubs from `api/proto/*.proto` into `api/gen/`.
 
-### 2. Run Services Locally
+### 2. Configure Environment
+
+Copy `.env.example` to `.env` in each service directory:
+
+```bash
+cp gateway/.env.example gateway/.env
+cp auth/.env.example auth/.env
+cp orders/.env.example orders/.env
+```
+
+### 3. Run Protobuf Generation
+
+Ensure stubs are generated before running services:
+
+```bash
+make gen
+```
+
+### 4. Run Services Locally
 
 Run each module from its directory in separate terminals:
 
@@ -224,17 +254,7 @@ cd orders && air
 cd gateway && air
 ```
 
-### 3. Configure Environment
-
-Copy `.env.example` to `.env` in each service directory:
-
-```bash
-cp gateway/.env.example gateway/.env
-cp auth/.env.example auth/.env
-cp orders/.env.example orders/.env
-```
-
-### 4. Run with Docker Compose
+### 5. Run with Docker Compose
 
 ```bash
 docker compose up --build
@@ -249,11 +269,16 @@ This starts:
 
 > Note: The payments and stock services are not yet included in docker-compose.
 
-### 5. Test
+### 6. Test
 
 ```bash
 # Health check
 curl http://localhost:3000/api/v1/ping
+
+# Create a user
+curl -X POST http://localhost:3000/api/v1/create_user \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123","name":"Test User"}'
 
 # Create an order
 curl -X POST http://localhost:3000/api/v1/orders \
@@ -280,24 +305,32 @@ Each service reads configuration from environment variables. Copy the `.env.exam
 
 | Variable | Default | Service | Loaded via |
 |----------|---------|---------|------------|
-| `GATEWAY_PORT` | `3000` | gateway | godotenv |
-| `ORDERS_PORT` | `4444` | orders | godotenv |
-| `AUTH_PORT` | `5555` | auth | os.Getenv |
-| `ORDER_SERVICE_URL` | `localhost:4444` | gateway | godotenv |
-| `AUTH_SERVICE_URL` | `localhost:5555` | gateway | os.Getenv |
-| `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth | os.Getenv |
+| `GATEWAY_PORT` | `3000` | gateway | godotenv/autoload |
+| `ORDERS_PORT` | `4444` | orders | godotenv/autoload |
+| `AUTH_PORT` | `5555` | auth | godotenv/autoload |
+| `ORDER_SERVICE_URL` | `localhost:4444` | gateway | godotenv/autoload |
+| `AUTH_SERVICE_URL` | `localhost:5555` | gateway | godotenv/autoload |
+| `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth | godotenv/autoload |
+
+### Hot Reload with Air
+
+```bash
+air -c auth/.air.toml
+air -c orders/.air.toml
+air -c gateway/.air.toml
+```
 
 ## Roadmap
 
 - [x] Protobuf API contracts
-- [x] Orders service (skeleton)
+- [x] Orders service (skeleton with CreateOrder stub)
 - [x] Auth service (skeleton) with DB connection pool
 - [x] Gateway with HTTP-to-gRPC translation
 - [x] Docker / docker-compose setup
 - [ ] Stock service implementation
 - [ ] Payments service implementation
-- [ ] Orders DB integration
-- [ ] Auth service full implementation (CreateUser, Login)
+- [ ] Orders DB integration (Orders service with database access)
+- [ ] Auth service full implementation (Login with JWT, proper error handling)
 - [ ] Service discovery / config
 - [ ] TLS / production hardening
 - [ ] Testing suite (unit + integration)
