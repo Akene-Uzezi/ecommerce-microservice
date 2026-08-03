@@ -44,3 +44,19 @@ func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUser
 func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.LoginResponse, error) {
 	return nil, nil
 }
+
+func (h *AuthGRPCHanlder) GetUserByEmail(ctx context.Context, req *authpb.GetUserRequest) (*authpb.GetUserResponse, error) {
+	userreq := &db.User{
+		Email: req.Email,
+	}
+	user, err := h.models.UserModel.GetUserByEmail(ctx, userreq)
+	if err != nil {
+		return nil, err
+	}
+	response := &authpb.GetUserResponse{
+		Email:    user.Email,
+		Password: user.Password,
+		Name:     user.Name,
+	}
+	return response, nil
+}

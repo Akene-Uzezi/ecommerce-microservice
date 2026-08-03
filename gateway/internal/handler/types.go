@@ -12,3 +12,8 @@ type CreateOrderPayload struct {
 	CustomerID string               `json:"customer_id"`
 	Items      []*orderpb.OrderItem `json:"items"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}

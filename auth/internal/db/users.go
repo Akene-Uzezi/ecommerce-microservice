@@ -35,3 +35,17 @@ func (m *UserModel) CreateUser(ctx context.Context, user *User) (*User, error) {
 	}
 	return &createduser, nil
 }
+
+func (m *UserModel) GetUserByEmail(ctx context.Context, user *User) (*User, error) {
+	var founduser User
+	err := m.DB.QueryRow(ctx, "SELECT * FROM users WHERE email = $1", user.Email).Scan(
+		&user.ID,
+		&founduser.Email,
+		&founduser.Password,
+		&founduser.Name,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %s", err)
+	}
+	return &founduser, nil
+}
