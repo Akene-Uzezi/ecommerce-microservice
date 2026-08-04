@@ -33,7 +33,7 @@ Solid lines are implemented today; dashed lines are planned. For a more detailed
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| Gateway | Working | HTTP → gRPC proxy for auth and orders, with request logging |
+| Gateway | Working | HTTP → gRPC proxy for auth and orders, with request logging and JWT auth middleware on protected routes |
 | Auth | Working | `CreateUser` and `Login` (JWT) backed by PostgreSQL |
 | Orders | Stub | `CreateOrder` returns hardcoded data; no DB access yet |
 | Payments | Scaffold | `go.mod` only, no Go source, empty Dockerfile |
@@ -110,7 +110,7 @@ ecommerce-microservices/
 │   ├── env.go               # GetEnvString(key, fallback)
 │   ├── json.go              # WriteJSON, ReadJSON
 │   ├── error.go             # WriteErrorBadRequest, WriteErrorServerError
-│   ├── status_log.go        # LogOK, LogBadRequest, LogInternalServerError, LogNotFound
+│   ├── status_log.go        # LogOK, LogBadRequest, LogInternalServerError, LogNotFound, LogUnauthorized
 │   └── go.mod
 ├── scripts/                 # SQL init scripts and helper scripts
 │   ├── auth_init.sql        # users table + email index
@@ -134,7 +134,7 @@ Canonical source of truth for all service interfaces. Contains `.proto` definiti
 
 | Proto | Service | RPCs |
 |-------|---------|------|
-| `auth.proto` | `AuthService` | `CreateUser`, `Login` |
+| `auth.proto` | `AuthService` | `CreateUser`, `Login`, `VerifyToken`, `SearchUsersByEmail` |
 | `order.proto` | `OrderService` | `CreateOrder`, `GetOrder` |
 | `payment.proto` | `PaymentService` | `ProcessPayment` |
 | `stock.proto` | `StockService` | `CheckStock`, `ReserveStock` |
@@ -151,8 +151,9 @@ Listens on `:3000`.
 |--------|------|-------------|---------|
 | `GET` | `/api/v1/ping` | Health check, returns `"pong"` | 200 |
 | `POST` | `/api/v1/create_user` | Creates a user via the Auth service | 201 |
-| `POST` | `/api/v1/login` | Authenticates and returns a JWT string | 200 |
-| `POST` | `/api/v1/orders` | Creates an order via the Orders service | 201 |
+| `POST` | `/api/v1/login` | Authenticates and returns a JSON object with the JWT `token` and the user's `email` | 200 |
+| `POST` | `/api/v1/orders` | Creates an order via the Orders service (requires a Bearer token) | 201 |
+| `GET` | `/api/v1/search_users` | Looks up a user by the `email` query parameter via the Auth service (requires a Bearer token) | 200 |
 
 Every handler emits a request log line via the `shared` logging helpers in the form `METHOD URI STATUS DURATION`.
 
@@ -163,8 +164,10 @@ Handles user creation and authentication. Listens on `:5555`.
 **gRPC methods:**
 - `CreateUser` — hashes the password with bcrypt and inserts the user, returning email and name.
 - `Login` — looks up the user by email, compares the bcrypt hash, and returns a signed JWT (HS256, 72 hour expiry) containing `email` and `name` claims.
+- `VerifyToken` — validates a JWT and returns whether it is `valid`; used by the Gateway's auth middleware.
+- `SearchUsersByEmail` — looks up a user by email and returns email and name.
 
-The `GetUserByEmail` DB helper exists on `UserModel` and is used internally by `Login`. It is no longer exposed as an RPC.
+The `GetUserByEmail` DB helper on `UserModel` backs both `Login` and `SearchUsersByEmail`.
 
 Database: `auth_db` on `:6433`, accessed via a `pgx/v5` pool (max 10 / min 1 connections) that retries the initial ping up to 10 times.
 
@@ -195,8 +198,8 @@ Common utilities imported by the other modules as `ecommerce-shared`:
 
 - `env.go` — `GetEnvString(key, fallback)`
 - `json.go` — `WriteJSON`, `ReadJSON`
-- `error.go` — `WriteErrorBadRequest`, `WriteErrorServerError`
-- `status_log.go` — `LogOK`, `LogBadRequest`, `LogInternalServerError`, `LogNotFound`
+- `error.go` — `WriteErrorBadRequest`, `WriteErrorServerError`, `WriteErrorUnauthorized`
+- `status_log.go` — `LogOK`, `LogBadRequest`, `LogInternalServerError`, `LogNotFound`, `LogUnauthorized`
 
 ## Prerequisites
 
@@ -260,13 +263,15 @@ docker compose up --build
 
 This starts:
 
-| Container | Port | Description |
+| Container | Port (host → container) | Description |
 |-----------|------|-------------|
-| `orders-db` | 5433 | PostgreSQL 16, healthchecked |
-| `auth-db` | 6433 | PostgreSQL 16, healthchecked, runs `auth_init.sql` |
-| `orders` | 4444 | Orders gRPC service |
-| `auth` | 5555 | Auth gRPC service |
-| `gateway` | 3000 | Public HTTP API |
+| `orders-db` | 5433 → 5432 | PostgreSQL 16, healthchecked |
+| `auth-db` | 6433 → 5432 | PostgreSQL 16, healthchecked, runs `auth_init.sql` |
+| `orders` | 4445 → 4444 | Orders gRPC service |
+| `auth` | 5556 → 5555 | Auth gRPC service |
+| `gateway` | 3001 → 3000 | Public HTTP API |
+
+> When run via Docker Compose, the Gateway is published on host port **3001**, so use `http://localhost:3001` for the requests in the "Try it out" section below. Running the services locally with `go run` keeps the Gateway on `3000`.
 
 Inside Compose, service discovery uses container names (`auth:5555`, `orders:4444`, `auth-db:5432`) via overridden environment variables.
 
@@ -283,7 +288,7 @@ curl -X POST http://localhost:3000/api/v1/create_user \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123","name":"Test User"}'
 
-# Login (returns a JWT string)
+# Login (returns a JSON object with the JWT token)
 curl -X POST http://localhost:3000/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
@@ -327,7 +332,7 @@ Because modules are separate, build and test from within a module directory (for
 | `ORDERS_PORT` | `4444` | orders |
 | `AUTH_PORT` | `5555` | auth |
 | `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth |
-| `jwt_secret` | `this is a basic secret change in production` | auth |
+| `jwt_secret` | `secret` | auth |
 
 All values are loaded through `godotenv/autoload` from the service's `.env` file, with the defaults above as fallbacks.
 
@@ -346,9 +351,7 @@ cd auth && air
 - `Orders.CreateOrder` returns hardcoded values and ignores the request payload.
 - `Orders.GetOrder` is declared in the proto but not implemented.
 - Orders, payments, and stock init SQL scripts are empty.
-- The Gateway does not verify JWTs; there is no auth middleware on protected routes yet.
 - All gRPC connections use insecure transport credentials.
-- `LoginRequest` in `gateway/internal/handler/types.go` is unused — the login handler decodes into `authpb.LoginRequest` directly.
 - There are no tests in the repository.
 
 ## Roadmap
@@ -359,7 +362,7 @@ cd auth && air
 - [x] Login with JWT issuance
 - [x] Request logging middleware helpers
 - [x] Docker / docker-compose setup
-- [ ] JWT verification middleware in the gateway
+- [x] JWT verification middleware in the gateway
 - [ ] Orders DB integration and real `CreateOrder` / `GetOrder`
 - [ ] Stock service implementation
 - [ ] Payments service implementation

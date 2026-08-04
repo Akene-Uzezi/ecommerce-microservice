@@ -12,20 +12,18 @@ graph TB
     Stock[Stock Service]
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
-    PaymentDB[(Payments DB)]
-    StockDB[(Stock DB)]
 
     Client -->|HTTP/JSON| Gateway
     Gateway -->|gRPC| Auth
     Gateway -->|gRPC| Orders
-    Gateway -->|gRPC| Payments
-    Gateway -->|gRPC| Stock
+    Gateway -.->|planned| Payments
+    Gateway -.->|planned| Stock
 
     Auth --> AuthDB
-    Orders --> OrdersDB
-    Payments --> PaymentDB
-    Stock --> StockDB
+    Orders -.->|not yet wired| OrdersDB
 ```
+
+Solid lines are implemented today; dashed lines are planned. The Payments and Stock services are scaffolds (no Go source, no containers) and their databases do not exist yet. The Orders service runs but does not yet connect to `orders-db`.
 
 ## Request Flow
 
@@ -36,7 +34,6 @@ sequenceDiagram
     participant A as Auth Service
     participant O as Orders Service
     participant ADB as Auth DB
-    participant ODB as Orders DB
 
     C->>G: POST /api/v1/create_user
     G->>A: gRPC CreateUser
@@ -45,11 +42,18 @@ sequenceDiagram
     A-->>G: User response
     G-->>C: HTTP 201 JSON
 
-    C->>G: POST /api/v1/orders
+    C->>G: POST /api/v1/login
+    G->>A: gRPC Login
+    A->>ADB: SELECT user by email
+    ADB-->>A: User row
+    A-->>G: JWT token
+    G-->>C: HTTP 200 {token, user}
+
+    C->>G: POST /api/v1/orders (Bearer token)
+    G->>A: gRPC VerifyToken
+    A-->>G: valid = true
     G->>O: gRPC CreateOrder
-    O->>ODB: INSERT INTO orders
-    ODB-->>O: Order created
-    O-->>G: Order response
+    O-->>G: Stub order (no DB)
     G-->>C: HTTP 201 JSON
 ```
 
@@ -59,21 +63,21 @@ sequenceDiagram
 graph LR
     Auth[(auth_db)]
     Orders[(orders_db)]
-    Payments[(payments_db)]
-    Stock[(stock_db)]
 
     Auth -->|users table| AuthSchema[id, email, password, name]
-    Orders -->|orders table| OrdersSchema[id, customer_id, items, status, total, created_at]
-    Payments -->|payments table| PaymentSchema[id, order_id, customer_id, amount, status]
-    Stock -->|stock table| StockSchema[product_id, quantity, reserved]
+    Orders -->|orders table - unused| OrdersSchema[declared in orders_init.sql, not yet created by the service]
 ```
+
+- `auth_db` (`:6433`) is created by `scripts/auth_init.sql` and used by the Auth service.
+- `orders_db` (`:5433`) has a running, healthchecked container, but `scripts/orders_init.sql` is empty and the Orders service does not connect to it yet.
+- `payments_db` and `stock_db` are planned and do not exist.
 
 ## Services
 
 | Service | Port | Protocol | Database | Purpose |
 |---------|------|----------|----------|---------|
-| Gateway | 3000 | HTTP/JSON | — | Public API entrypoint |
-| Auth | 5555 | gRPC | :6433 | User creation and authentication |
-| Orders | 4444 | gRPC | :5433 | Order creation and retrieval |
-| Payments | — | gRPC | — | Payment processing |
-| Stock | — | gRPC | — | Inventory management |
+| Gateway | 3000 | HTTP/JSON | — | Public API entrypoint; gRPC client to Auth/Orders; JWT auth middleware on protected routes |
+| Auth | 5555 | gRPC | :6433 | User creation, authentication, token verification, user lookup |
+| Orders | 4444 | gRPC | :5433 (unused) | Order creation (stub) and retrieval (unimplemented) |
+| Payments | — | gRPC (planned) | — (planned) | Payment processing (scaffold) |
+| Stock | — | gRPC (planned) | — (planned) | Inventory management (scaffold) |
