@@ -63,9 +63,6 @@ func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (
 	if err != nil {
 		return nil, err
 	}
-	if founduser == nil {
-		return nil, fmt.Errorf("user not found: %s", err)
-	}
 	matchPassword := util.ComparePassword(founduser.Password, req.Password)
 	if !matchPassword {
 		return nil, errors.New("invalid credentials")
