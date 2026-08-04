@@ -26,7 +26,7 @@ func (h *AuthHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
 
 func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	var requestbody CreateUserPayload
+	var requestbody authpb.CreateUserRequest
 	if err := shared.ReadJSON(r, &requestbody); err != nil {
 		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
 		shared.LogBadRequest(r.Method, r.RequestURI, time.Since(start))
@@ -34,11 +34,7 @@ func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	res, err := h.authClient.CreateUser(ctx, &authpb.CreateUserRequest{
-		Email:    requestbody.Email,
-		Password: requestbody.Password,
-		Name:     requestbody.Name,
-	})
+	res, err := h.authClient.CreateUser(ctx, &requestbody)
 	if err != nil {
 		log.Printf("grpc create user failed: %v", err)
 		shared.WriteErrorServerError(w, "internal server error", err)
