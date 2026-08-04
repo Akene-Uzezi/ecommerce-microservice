@@ -4,9 +4,18 @@ package handler
 import (
 	"context"
 	"ecommerce-auth/internal/db"
+	"ecommerce-auth/internal/util"
+	shared "ecommerce-shared"
+	"errors"
+	"fmt"
 	"log"
+	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 
 	authpb "ecommerce-api/gen/auth"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthGRPCHanlder struct {
@@ -25,12 +34,16 @@ func NewAuthGRPCHandler() *AuthGRPCHanlder {
 }
 
 func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.CreateUserResponse, error) {
+	hashPassword, err := util.HashPassword(req.Password)
+	if err != nil {
+		return nil, fmt.Errorf("error hashing password: %s", err)
+	}
 	user := &db.User{
 		Email:    req.Email,
-		Password: req.Password,
+		Password: hashPassword,
 		Name:     req.Name,
 	}
-	user, err := h.models.UserModel.CreateUser(ctx, user)
+	user, err = h.models.UserModel.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -42,21 +55,40 @@ func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUser
 }
 
 func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.LoginResponse, error) {
-	return nil, nil
-}
-
-func (h *AuthGRPCHanlder) GetUserByEmail(ctx context.Context, req *authpb.GetUserRequest) (*authpb.GetUserResponse, error) {
-	userreq := &db.User{
-		Email: req.Email,
+	user := &db.User{
+		Email:    req.Email,
+		Password: req.Password,
 	}
-	user, err := h.models.UserModel.GetUserByEmail(ctx, userreq)
+	founduser, err := h.models.UserModel.GetUserByEmail(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	response := &authpb.GetUserResponse{
-		Email:    user.Email,
-		Password: user.Password,
-		Name:     user.Name,
+	if founduser == nil {
+		return nil, fmt.Errorf("user not found: %s", err)
 	}
-	return response, nil
+	matchPassword := util.ComparePassword(founduser.Password, req.Password)
+	if !matchPassword {
+		return nil, errors.New("invalid credentials")
+	}
+
+	claims := &Claims{
+		Email: founduser.Email,
+		Name:  founduser.Name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwtSecret := shared.GetEnvString("jwt_secret", "this is a basic secret change in production")
+
+	tokenString, err := token.SignedString([]byte(jwtSecret))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate jwt token: %s", err)
+	}
+
+	return &authpb.LoginResponse{
+		Token: tokenString,
+	}, nil
 }

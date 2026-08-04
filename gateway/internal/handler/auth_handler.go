@@ -2,7 +2,6 @@ package handler
 
 import (
 	shared "ecommerce-shared"
-	"errors"
 	"log"
 	"net/http"
 
@@ -31,17 +30,11 @@ func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 		shared.LogBadRequest(r.Method, r.RequestURI)
 		return
 	}
-	hashPassword, err := shared.HashPassword(requestbody.Password)
-	if err != nil {
-		shared.WriteErrorServerError(w, "Failed to hashpassword", err)
-		shared.LogInternalServerError(r.Method, r.RequestURI)
-		return
-	}
 
 	ctx := r.Context()
 	res, err := h.authClient.CreateUser(ctx, &authpb.CreateUserRequest{
 		Email:    requestbody.Email,
-		Password: hashPassword,
+		Password: requestbody.Password,
 		Name:     requestbody.Name,
 	})
 	if err != nil {
@@ -56,34 +49,22 @@ func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHTTPHandler) login(w http.ResponseWriter, r *http.Request) {
-	var requestbody LoginRequest
-	if err := shared.ReadJSON(r, &requestbody); err != nil {
-		shared.WriteErrorBadRequest(w, "Invalid requestbody", err)
+	var loginrequest authpb.LoginRequest
+	if err := shared.ReadJSON(r, &loginrequest); err != nil {
+		shared.WriteErrorBadRequest(w, "Invalid request", err)
 		shared.LogBadRequest(r.Method, r.RequestURI)
 		return
 	}
 
 	ctx := r.Context()
-	user, err := h.authClient.GetUserByEmail(ctx, &authpb.GetUserRequest{
-		Email: requestbody.Email,
-	})
+
+	res, err := h.authClient.Login(ctx, &loginrequest)
 	if err != nil {
-		log.Printf("grpc failed to get user by email: %v", err)
-		shared.WriteErrorServerError(w, "internal server error", err)
+		shared.WriteErrorServerError(w, "grpc failed to login", err)
 		shared.LogInternalServerError(r.Method, r.RequestURI)
 		return
 	}
 
-	if user == nil {
-		_ = shared.WriteJSON(w, http.StatusNotFound, "User not found")
-		shared.LogNotFound(r.Method, r.RequestURI)
-		return
-	}
-
-	matchPassword := shared.ComparePassword(user.Password, requestbody.Password)
-	if !matchPassword {
-		shared.WriteErrorBadRequest(w, "Invalid credentials", errors.New("invalid credentials were passed"))
-		shared.LogBadRequest(r.Method, r.RequestURI)
-		return
-	}
+	_ = shared.WriteJSON(w, http.StatusOK, res.Token)
+	shared.LogOK(r.Method, r.RequestURI)
 }
