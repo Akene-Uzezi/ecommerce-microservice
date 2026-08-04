@@ -20,9 +20,14 @@ message LoginRequest {
   string password = 2;
 }
 
+message VerifyTokenRequest { string token = 1; }
+
+message VerifyTokenResponse { bool valid = 1; }
+
 message LoginResponse { string token = 1; }
 
 service AuthService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
 }
