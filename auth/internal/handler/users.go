@@ -68,3 +68,7 @@ func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (
 		Token: tokenString,
 	}, nil
 }
+
+func (h *AuthGRPCHanlder) SearchUsersByEmail(ctx context.Context, req *authpb.SearchUserByEmailRequest) (*authpb.SearchUserByEmailResponse, error) {
+	return nil, nil
+}

@@ -37,6 +37,6 @@ service AuthService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
-  rpc SearchUserByEmail(SearchUserByEmailRequest)
+  rpc SearchUsersByEmail(SearchUserByEmailRequest)
       returns (SearchUserByEmailResponse);
 }
