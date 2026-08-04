@@ -75,8 +75,10 @@ ecommerce-microservices/
 │   │   │   ├── db.go        # pgxpool initialization with ping retry
 │   │   │   └── users.go     # UserModel: CreateUser, GetUserByEmail
 │   │   ├── handler/
-│   │   │   ├── grpc.go      # CreateUser + Login (JWT issuance)
-│   │   │   └── types.go     # JWT Claims struct
+│   │   │   ├── grpc.go      # AuthGRPCHandler setup + DB pool injection
+│   │   │   ├── users.go     # CreateUser + SearchUsersByEmail
+│   │   │   ├── token.go     # Login + VerifyToken (JWT issuance/verification)
+│   │   │   └── types.go     # Claims struct
 │   │   └── util/
 │   │       └── bcrypt.go    # HashPassword, ComparePassword
 │   ├── Dockerfile
@@ -84,10 +86,14 @@ ecommerce-microservices/
 │   └── .env.example
 ├── gateway/                 # HTTP API Gateway
 │   ├── cmd/main.go          # HTTP server + gRPC client dialing
-│   ├── internal/handler/
-│   │   ├── handler.go       # ping + order routes
-│   │   ├── auth_handler.go  # create_user + login routes
-│   │   └── types.go         # Request payload types
+│   ├── internal/
+│   │   ├── handler/
+│   │   │   ├── handler.go       # ping + order routes (order route auth-protected)
+│   │   │   ├── auth_handler.go  # create_user + login + search_users routes
+│   │   │   ├── users.go         # search_users route handler
+│   │   │   └── types.go         # Request payload types
+│   │   └── middleware/
+│   │       └── auth.go           # RequireAuth JWT verification middleware
 │   ├── Dockerfile           # Multi-stage build
 │   ├── .air.toml
 │   └── .env.example
