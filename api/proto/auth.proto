@@ -26,8 +26,17 @@ message VerifyTokenResponse { bool valid = 1; }
 
 message LoginResponse { string token = 1; }
 
+message SearchUserByEmailRequest { string email = 1; }
+
+message SearchUserByEmailResponse {
+  string email = 1;
+  string name = 2;
+}
+
 service AuthService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+  rpc SearchUserByEmail(SearchUserByEmailRequest)
+      returns (SearchUserByEmailResponse);
 }
