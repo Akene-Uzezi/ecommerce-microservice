@@ -12,3 +12,7 @@ func WriteErrorBadRequest(w http.ResponseWriter, message string, err error) {
 func WriteErrorServerError(w http.ResponseWriter, message string, err error) {
 	http.Error(w, fmt.Sprintf("%s: %s", message, err), http.StatusInternalServerError)
 }
+
+func WriteErrorUnauthorized(w http.ResponseWriter, message string, err error) {
+	http.Error(w, fmt.Sprintf("%s: %s", message, err), http.StatusUnauthorized)
+}

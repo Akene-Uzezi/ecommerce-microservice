@@ -24,7 +24,7 @@ services:
       orders-db:
         condition: service_healthy
     ports:
-      - "4444:4444"
+      - "4445:4444"
 
   auth-db:
     image: postgres:16-alpine
@@ -53,7 +53,7 @@ services:
     environment:
       - AUTH_DB_CONN_STR=postgres://auth:auth@auth-db:5432/auth_db
     ports:
-      - "5555:5555"
+      - "5556:5555"
     env_file:
       - ./auth/.env
 
@@ -68,7 +68,7 @@ services:
       - AUTH_SERVICE_URL=auth:5555
       - ORDER_SERVICE_URL=orders:4444
     ports:
-      - "3000:3000"
+      - "3001:3000"
     env_file:
       - ./gateway/.env
 

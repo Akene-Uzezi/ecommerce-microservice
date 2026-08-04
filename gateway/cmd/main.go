@@ -43,7 +43,7 @@ func main() {
 	authClient := authpb.NewAuthServiceClient(authServiceConn)
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
-	orderHandler := handler.NewOrderHTTPHandler(orderClient)
+	orderHandler := handler.NewOrderHTTPHandler(orderClient, authClient)
 	authHandler := handler.NewAuthHTTPHandler(authClient)
 	orderHandler.RegisterRoutes(mux)
 	authHandler.RegisterRoutes(mux)

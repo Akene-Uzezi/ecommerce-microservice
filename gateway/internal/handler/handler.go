@@ -2,27 +2,31 @@
 package handler
 
 import (
+	"ecommerce-gateway/internal/middleware"
 	shared "ecommerce-shared"
 	"log"
 	"net/http"
 	"time"
 
+	authpb "ecommerce-api/gen/auth"
 	orderpb "ecommerce-api/gen/order"
 )
 
 type handler struct {
 	orderClient orderpb.OrderServiceClient
+	authClient  authpb.AuthServiceClient
 }
 
-func NewOrderHTTPHandler(orderClient orderpb.OrderServiceClient) *handler {
+func NewOrderHTTPHandler(orderClient orderpb.OrderServiceClient, authClient authpb.AuthServiceClient) *handler {
 	return &handler{
 		orderClient: orderClient,
+		authClient:  authClient,
 	}
 }
 
 func (h *handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/ping", h.ping)
-	mux.HandleFunc("POST /api/v1/orders", h.createOrder)
+	mux.HandleFunc("POST /api/v1/orders", middleware.RequireAuth(h.authClient)(h.createOrder))
 }
 
 func (h *handler) ping(w http.ResponseWriter, r *http.Request) {

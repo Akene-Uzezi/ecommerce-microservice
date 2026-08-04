@@ -21,3 +21,7 @@ func LogInternalServerError(method, url string, duration time.Duration) {
 func LogNotFound(method, url string, duration time.Duration) {
 	log.Printf("%s %s %d %s", method, url, http.StatusNotFound, duration)
 }
+
+func LogUnauthorized(method, url string, duration time.Duration) {
+	log.Printf("%s %s %d %s", method, url, http.StatusUnauthorized, duration)
+}
