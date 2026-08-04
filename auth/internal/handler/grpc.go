@@ -18,6 +18,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwtSecret = shared.GetEnvString("jwt_secret", "secret")
+
 type AuthGRPCHanlder struct {
 	authpb.UnimplementedAuthServiceServer
 	models *db.Models
@@ -78,7 +80,6 @@ func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtSecret := shared.GetEnvString("jwt_secret", "this is a basic secret change in production")
 
 	tokenString, err := token.SignedString([]byte(jwtSecret))
 	if err != nil {
@@ -87,5 +88,24 @@ func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (
 
 	return &authpb.LoginResponse{
 		Token: tokenString,
+	}, nil
+}
+
+func (h *AuthGRPCHanlder) VerifyToken(ctx context.Context, req *authpb.VerifyTokenRequest) (*authpb.VerifyTokenResponse, error) {
+	claims := &Claims{}
+
+	token, err := jwt.ParseWithClaims(req.Token, claims, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected sighning error")
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("invalid token: %s", err)
+	}
+
+	return &authpb.VerifyTokenResponse{
+		Valid: token.Valid,
 	}, nil
 }

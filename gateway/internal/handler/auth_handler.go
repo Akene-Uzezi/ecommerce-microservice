@@ -64,6 +64,13 @@ func (h *AuthHTTPHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = shared.WriteJSON(w, http.StatusOK, res.Token)
+	response := map[string]any{
+		"token": res.Token,
+		"user": map[string]any{
+			"email": loginrequest.Email,
+		},
+	}
+
+	_ = shared.WriteJSON(w, http.StatusOK, response)
 	shared.LogOK(r.Method, r.RequestURI, time.Since(start))
 }
