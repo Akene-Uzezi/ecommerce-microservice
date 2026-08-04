@@ -17,6 +17,11 @@ func RequireAuth(authClient authpb.AuthServiceClient) func(http.HandlerFunc) htt
 		return func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				shared.WriteErrorUnauthorized(w, "unable to get authorization header", errors.New("no header was passed"))
+				shared.LogUnauthorized(r.Method, r.RequestURI, time.Since(start))
+				return
+			}
 			parts := strings.SplitN(authHeader, " ", 2)
 			parts[1] = strings.TrimSpace(parts[1])
 			if len(parts) != 2 || parts[0] != "Bearer" {
