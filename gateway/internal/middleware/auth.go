@@ -18,6 +18,7 @@ func RequireAuth(authClient authpb.AuthServiceClient) func(http.HandlerFunc) htt
 			start := time.Now()
 			authHeader := r.Header.Get("Authorization")
 			parts := strings.SplitN(authHeader, " ", 2)
+			parts[1] = strings.TrimSpace(parts[1])
 			if len(parts) != 2 || parts[0] != "Bearer" {
 				shared.WriteErrorUnauthorized(w, "missing or malformed token", errors.New("invalid token format"))
 				shared.LogUnauthorized(r.Method, r.RequestURI, time.Since(start))
