@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ecommerce-gateway/internal/middleware"
 	shared "ecommerce-shared"
 	"log"
 	"net/http"
@@ -22,6 +23,7 @@ func NewAuthHTTPHandler(client authpb.AuthServiceClient) *AuthHTTPHandler {
 func (h *AuthHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/create_user", h.createUser)
 	mux.HandleFunc("POST /api/v1/login", h.login)
+	mux.HandleFunc("GET /api/v1/search_users", middleware.RequireAuth(h.authClient)(h.searchUsersByEmail))
 }
 
 func (h *AuthHTTPHandler) createUser(w http.ResponseWriter, r *http.Request) {

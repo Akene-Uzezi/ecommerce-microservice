@@ -12,6 +12,9 @@ import (
 	authpb "ecommerce-api/gen/auth"
 )
 
+// RequireAuth This function takes a [authpb.AuthServiceClient] and returns a function which takes a [http.HandlerFunc]
+// this is the next function to be called if the first one passed
+// then it utimately returns [http.HandlerFunc]
 func RequireAuth(authClient authpb.AuthServiceClient) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {

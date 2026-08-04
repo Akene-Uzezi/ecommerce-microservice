@@ -70,5 +70,17 @@ func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (
 }
 
 func (h *AuthGRPCHanlder) SearchUsersByEmail(ctx context.Context, req *authpb.SearchUserByEmailRequest) (*authpb.SearchUserByEmailResponse, error) {
-	return nil, nil
+	user := &db.User{
+		Email: req.Email,
+	}
+
+	foundUser, err := h.models.UserModel.GetUserByEmail(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %s", err)
+	}
+
+	return &authpb.SearchUserByEmailResponse{
+		Email: foundUser.Email,
+		Name:  foundUser.Name,
+	}, nil
 }
