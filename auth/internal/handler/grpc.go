@@ -96,7 +96,7 @@ func (h *AuthGRPCHanlder) VerifyToken(ctx context.Context, req *authpb.VerifyTok
 
 	token, err := jwt.ParseWithClaims(req.Token, claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected sighning error")
+			return nil, errors.New("unexpected signing error")
 		}
 		return []byte(jwtSecret), nil
 	})
