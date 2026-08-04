@@ -3,20 +3,21 @@ package shared
 import (
 	"log"
 	"net/http"
+	"time"
 )
 
-func LogOK(method, url string) {
-	log.Printf("%s %s %d", method, url, http.StatusOK)
+func LogOK(method, url string, duration time.Duration) {
+	log.Printf("%s %s %d %s", method, url, http.StatusOK, duration)
 }
 
-func LogBadRequest(method, url string) {
-	log.Printf("%s %s %d", method, url, http.StatusBadRequest)
+func LogBadRequest(method, url string, duration time.Duration) {
+	log.Printf("%s %s %d %s", method, url, http.StatusBadRequest, duration)
 }
 
-func LogInternalServerError(method, url string) {
-	log.Printf("%s %s %d", method, url, http.StatusInternalServerError)
+func LogInternalServerError(method, url string, duration time.Duration) {
+	log.Printf("%s %s %d %s", method, url, http.StatusInternalServerError, duration)
 }
 
-func LogNotFound(method, url string) {
-	log.Printf("%s %s %d", method, url, http.StatusNotFound)
+func LogNotFound(method, url string, duration time.Duration) {
+	log.Printf("%s %s %d %s", method, url, http.StatusNotFound, duration)
 }
