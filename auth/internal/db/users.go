@@ -19,6 +19,12 @@ type User struct {
 	Name     string `json:"name"`
 }
 
+func newUserModel(db *pgxpool.Pool) *UserModel {
+	return &UserModel{
+		DB: db,
+	}
+}
+
 func (m *UserModel) CreateUser(ctx context.Context, user *User) (*User, error) {
 	var createduser User
 	query := `
