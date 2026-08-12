@@ -20,10 +20,10 @@ func NewModels(pool *pgxpool.Pool) *Models {
 }
 
 func InitPool() (*pgxpool.Pool, error) {
-	authDbConnStr := shared.GetEnvString("AUTH_DB_CONN_STR", "postgres://auth:auth@localhost:6433/auth_db")
+	authDBConnStr := shared.GetEnvString("AUTH_DB_CONN_STR", "postgres://auth:auth@localhost:6433/auth_db")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	config, err := pgxpool.ParseConfig(authDbConnStr)
+	config, err := pgxpool.ParseConfig(authDBConnStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse conn str: %s", err)
 	}
