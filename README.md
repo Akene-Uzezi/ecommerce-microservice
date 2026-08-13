@@ -55,6 +55,7 @@ Solid lines are implemented today; dashed lines are planned. For a more detailed
 | Workspace | Go workspaces (`go.work`) |
 | Containerization | Docker, Docker Compose |
 | Hot Reload | [air](https://github.com/air-verse/air) |
+| Testing | [testify](https://github.com/stretchr/testify) (assertions), [testcontainers-go](https://golang.testcontainers.org/) PostgreSQL module (integration DB) |
 
 ## Project Structure
 
@@ -346,13 +347,39 @@ Each service has an `.air.toml` that builds `./cmd/main.go` into `./tmp/main`. R
 cd auth && air
 ```
 
+## Testing
+
+Tests live next to the code as `*_test.go` files and must be run **per module** (for example `cd auth && go test ./...`), since this is a Go workspace with independent modules. Integration tests rely on `shared.SetupTestDBSuite`, which spins up a real PostgreSQL 16 instance in a throwaway [testcontainers](https://golang.testcontainers.org/) container, applies the relevant `scripts/*.sql` schema, and tears it down on completion.
+
+> **Docker required**: because the integration tests use testcontainers, a running Docker daemon is required to execute them. Unit-style tests still compile without it, but the DB-backed suites will fail without Docker.
+
+After cloning, generate the protobuf stubs first (see [Generate protobuf stubs](#1-generate-protobuf-stubs)), then run the suite across every module:
+
+```bash
+make gen
+sh ./scripts/runtests.sh
+```
+
+`scripts/runtests.sh` lists every workspace module and runs `go test -v` on each. The CI workflow (`.github/workflows/ci.yml`) installs `protoc` + plugins, runs `make gen`, then executes `runtests.sh` on every push/PR.
+
+### Current coverage
+
+| Module | File | What it covers |
+|--------|------|----------------|
+| `auth/cmd` | `main_test.go` | Boots the gRPC `AuthService` server against a testcontainer DB in `TestMain` for end-to-end handler testing |
+| `auth/internal/db` | `db_test.go` | `TestMain` that provisions a shared testcontainer pool and `UserModel` |
+| `auth/internal/db` | `users_test.go` | `CreateUser` and `GetUserByEmail` against a real Postgres |
+| `auth/internal/handler` | `usershandler_test.go` | Placeholder package (empty — tests pending) |
+
+Assertions use `github.com/stretchr/testify/assert`.
+
 ## Known Gaps
 
 - `Orders.CreateOrder` returns hardcoded values and ignores the request payload.
 - `Orders.GetOrder` is declared in the proto but not implemented.
 - Orders, payments, and stock init SQL scripts are empty.
 - All gRPC connections use insecure transport credentials.
-- There are no tests in the repository.
+- Tests currently only cover the `auth` module; gateway, orders, payments, and stock have no tests yet.
 
 ## Roadmap
 
@@ -369,4 +396,5 @@ cd auth && air
 - [ ] Order saga: orders → stock reservation → payment
 - [ ] Service discovery / centralized config
 - [ ] TLS / production hardening
-- [ ] Testing suite (unit + integration)
+- [x] Auth service tests (unit + integration; spins up a real PostgreSQL via testcontainers)
+- [ ] Expand testing suite to gateway, orders, payments, and stock
