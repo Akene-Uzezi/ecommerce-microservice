@@ -4,7 +4,6 @@ package handler
 import (
 	"ecommerce-auth/internal/db"
 	shared "ecommerce-shared"
-	"log"
 
 	_ "github.com/joho/godotenv/autoload"
 
@@ -18,12 +17,8 @@ type AuthGRPCHanlder struct {
 	models *db.Models
 }
 
-func NewAuthGRPCHandler() *AuthGRPCHanlder {
-	pool, err := db.InitPool()
-	if err != nil {
-		log.Fatalf("failed to init db pool: %s", err)
-	}
+func NewAuthGRPCHandler(models *db.Models) *AuthGRPCHanlder {
 	return &AuthGRPCHanlder{
-		models: db.NewModels(pool),
+		models: models,
 	}
 }

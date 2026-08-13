@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ecommerce-auth/internal/db"
 	"ecommerce-auth/internal/handler"
 	shared "ecommerce-shared"
 	"fmt"
@@ -23,7 +24,11 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	authHandler := handler.NewAuthGRPCHandler()
+	pool, err := db.InitPool()
+	if err != nil {
+		log.Fatalf("failed to init db pool: %s", err)
+	}
+	authHandler := handler.NewAuthGRPCHandler(db.NewModels(pool))
 	authpb.RegisterAuthServiceServer(grpcServer, authHandler)
 
 	log.Printf("auth service running on port:%s", authPort)
