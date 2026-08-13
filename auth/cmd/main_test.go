@@ -1,30 +1,37 @@
 package main
 
 import (
-	"ecommerce-auth/internal/db"
-	shared "ecommerce-shared"
+	"ecommerce-auth/internal/handler"
+	"fmt"
 	"log"
+	"net"
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-)
+	authpb "ecommerce-api/gen/auth"
 
-var (
-	testPool  *pgxpool.Pool
-	UserModel *db.UserModel
+	"google.golang.org/grpc"
 )
 
 func TestMain(m *testing.M) {
-	pool, cleanup, err := shared.SetupTestDBSuite("/scripts/auth_init.sql")
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", authPort))
 	if err != nil {
-		log.Fatalf("failed to initialize test container: %v", err)
+		log.Fatalf("failed to listen on auth port: %s", err)
 	}
-	testPool = pool
-	UserModel = db.NewUserModel(testPool)
+
+	grpcServer := grpc.NewServer()
+	authHandler := handler.NewAuthGRPCHandler()
+	authpb.RegisterAuthServiceServer(grpcServer, authHandler)
+
+	go func() {
+		log.Printf("auth service started %s", authPort)
+		if err := grpcServer.Serve(l); err != nil {
+			log.Printf("grpc server stopped: %v", err)
+		}
+	}()
+
 	exitCode := m.Run()
 
-	cleanup()
-
+	grpcServer.GracefulStop()
 	os.Exit(exitCode)
 }
