@@ -15,6 +15,7 @@ var user = &User{
 
 func TestCreateUser(t *testing.T) {
 	ctx := context.Background()
-	_, err := userModel.CreateUser(ctx, user)
+	user, err := userModel.CreateUser(ctx, user)
 	assert.NoError(t, err)
+	t.Logf("user: %v", user)
 }
