@@ -1,6 +1,7 @@
-package db
+package main
 
 import (
+	"ecommerce-auth/internal/db"
 	shared "ecommerce-shared"
 	"log"
 	"os"
@@ -11,7 +12,7 @@ import (
 
 var (
 	testPool  *pgxpool.Pool
-	userModel *UserModel
+	UserModel *db.UserModel
 )
 
 func TestMain(m *testing.M) {
@@ -20,7 +21,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test container: %v", err)
 	}
 	testPool = pool
-	userModel = newUserModel(testPool)
+	UserModel = db.NewUserModel(testPool)
 	exitCode := m.Run()
 
 	cleanup()

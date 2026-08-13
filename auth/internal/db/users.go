@@ -19,7 +19,7 @@ type User struct {
 	Name     string `json:"name"`
 }
 
-func newUserModel(db *pgxpool.Pool) *UserModel {
+func NewUserModel(db *pgxpool.Pool) *UserModel {
 	return &UserModel{
 		DB: db,
 	}
