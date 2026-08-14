@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "ecommerce/api/gen/product;productpb";
+
+message Product {
+  string name = 1;
+  double price = 2;
+  uint32 quantity = 3;
+}
+
+message CreateProduct {}
+
+message CreateProductResponse {}
+
+message GetProducts {}
+
+service ProductService {}
