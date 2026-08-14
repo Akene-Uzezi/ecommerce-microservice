@@ -10,6 +10,7 @@ graph TB
     Orders[Orders Service :4444]
     Payments[Payments Service]
     Stock[Stock Service]
+    Products[Products Service]
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
 
@@ -18,12 +19,13 @@ graph TB
     Gateway -->|gRPC| Orders
     Gateway -.->|planned| Payments
     Gateway -.->|planned| Stock
+    Gateway -.->|planned| Products
 
     Auth --> AuthDB
     Orders -.->|not yet wired| OrdersDB
 ```
 
-Solid lines are implemented today; dashed lines are planned. The Payments and Stock services are scaffolds (no Go source, no containers) and their databases do not exist yet. The Orders service runs but does not yet connect to `orders-db`.
+Solid lines are implemented today; dashed lines are planned. The Payments, Stock, and Products services are scaffolds (no Go source, no containers) and their databases do not exist yet. The Orders service runs but does not yet connect to `orders-db`.
 
 ## Request Flow
 
@@ -81,3 +83,4 @@ graph LR
 | Orders | 4444 | gRPC | :5433 (unused) | Order creation (stub) and retrieval (unimplemented) |
 | Payments | — | gRPC (planned) | — (planned) | Payment processing (scaffold) |
 | Stock | — | gRPC (planned) | — (planned) | Inventory management (scaffold) |
+| Products | — | gRPC (planned) | — (planned) | Product catalog management (scaffold) |
