@@ -10,10 +10,15 @@ message Product {
   uint32 quantity = 3;
 }
 
-message CreateProduct {}
+message CreateProductRequest { Product product = 1; }
 
-message CreateProductResponse {}
+message CreateProductResponse { Product product = 1; }
 
-message GetProducts {}
+message GetProductsRequest { repeated Product products = 1; }
 
-service ProductService {}
+message GetProductsResponse { repeated Product products = 1; }
+
+service ProductService {
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc GetProduct(GetProductsRequest) returns (GetProductsResponse);
+}
