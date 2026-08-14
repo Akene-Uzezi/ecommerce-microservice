@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package product;
+package products;
 
-option go_package = "ecommerce/api/gen/product;productpb";
+option go_package = "ecommerce/api/gen/products;productspb";
 
 message Product {
   string name = 1;

@@ -23,6 +23,11 @@ gen:
 		--go-grpc_out=api/gen/auth --go-grpc_opt=paths=source_relative \
 		auth.proto
 
+	@protoc -I=api/proto \
+		--go_out=api/gen/products --go_opt=paths=source_relative \
+		--go-grpc_out=api/gen/products --go-grpc_opt=paths=source_relative \
+		products.proto
+
 	@echo "Protobuf stubs generated cleanly!"
 
 clean:
