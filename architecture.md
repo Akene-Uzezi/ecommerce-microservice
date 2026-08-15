@@ -25,7 +25,7 @@ graph TB
     Orders -.->|not yet wired| OrdersDB
 ```
 
-Solid lines are implemented today; dashed lines are planned. The Payments, Stock, and Products services are scaffolds (no Go source, no containers) and their databases do not exist yet. The Orders service runs but does not yet connect to `orders-db`.
+Solid lines are implemented today; dashed lines are planned. The Payments and Stock services are scaffolds (no Go source, no containers). The Products service has DB models and a gRPC handler stub but no server entrypoint, Dockerfile, or DB wiring yet, and no container. Their databases do not exist yet. The Orders service runs but does not yet connect to `orders-db`.
 
 ## Request Flow
 
@@ -83,4 +83,4 @@ graph LR
 | Orders | 4444 | gRPC | :5433 (unused) | Order creation (stub) and retrieval (unimplemented) |
 | Payments | — | gRPC (planned) | — (planned) | Payment processing (scaffold) |
 | Stock | — | gRPC (planned) | — (planned) | Inventory management (scaffold) |
-| Products | — | gRPC (planned) | — (planned) | Product catalog management (scaffold) |
+| Products | — | gRPC (planned) | — (planned) | Product catalog management (db + handler stubs, no server/Dockerfile) |
