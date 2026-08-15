@@ -34,7 +34,8 @@ func main() {
 	orderClient := orderpb.NewOrderServiceClient(orderServiceConn)
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
-	authClient := InitAuthService(mux)
+	authClient, authServiceConn := InitAuthService(mux)
+	defer authServiceConn.Close()
 	orderHandler := handler.NewOrderHTTPHandler(orderClient, authClient)
 	orderHandler.RegisterRoutes(mux)
 
