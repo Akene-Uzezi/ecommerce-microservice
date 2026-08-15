@@ -3,4 +3,6 @@ CREATE TABLE products (
   name VARCHAR(100) NOT NULL,
   price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
   QUANTITY INTEGER NOT NULL DEFAULT 0
-)
+);
+
+CREATE INDEX IF NOT EXISTS idx_products_name ON products(email);

@@ -24,7 +24,9 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	pool, err := db.InitPool()
+	authDBConnStr := shared.GetEnvString("AUTH_DB_CONN_STR", "postgres://auth:auth@localhost:6433/auth_db")
+
+	pool, err := shared.InitPool(authDBConnStr)
 	if err != nil {
 		log.Fatalf("failed to init db pool: %s", err)
 	}
