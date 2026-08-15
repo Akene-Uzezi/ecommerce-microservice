@@ -15,7 +15,7 @@ func (p *ProductGRPCHandler) NewProductGRPCHanler() *ProductGRPCHandler {
 	return &ProductGRPCHandler{}
 }
 
-func (p *ProductGRPCHandler) CreateProduct(ctx context.Context, req *prodcutspb.CreateProductRequest) (*prodcutspb.CreateProductResponse, error) {
+func (p *ProductGRPCHandler) AddProduct(ctx context.Context, req *prodcutspb.AddProductRequest) (*prodcutspb.AddProductResponse, error) {
 	return nil, nil
 }
 
