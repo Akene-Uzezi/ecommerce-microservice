@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func initAuthService(mux *http.ServeMux) (authpb.AuthServiceClient, *grpc.ClientConn) {
+func InitAuthService(mux *http.ServeMux) (authpb.AuthServiceClient, *grpc.ClientConn) {
 	authServiceConn, err := grpc.NewClient(authServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to auth grpc service: %v", err)

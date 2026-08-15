@@ -1,17 +1,12 @@
 package main
 
 import (
-	"ecommerce-gateway/internal/handler"
 	shared "ecommerce-shared"
 	"fmt"
 	"log"
 	"net/http"
 
-	orderpb "ecommerce-api/gen/order"
-
 	_ "github.com/joho/godotenv/autoload"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -21,24 +16,12 @@ var (
 )
 
 func main() {
-	orderServiceConn, err := grpc.NewClient(
-		orderServiceURL,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		log.Fatalf("failed to connect to orders grpc service: %v", err)
-	}
-	defer orderServiceConn.Close()
-	log.Printf("dialing orderservice at %s", orderServiceURL)
-
-	orderClient := orderpb.NewOrderServiceClient(orderServiceConn)
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
-	authClient, authServiceConn := initAuthService(mux)
+	authClient, authServiceConn := InitAuthService(mux)
 	defer authServiceConn.Close()
-	orderHandler := handler.NewOrderHTTPHandler(orderClient, authClient)
-	orderHandler.RegisterRoutes(mux)
-
+	_, ordersServiceConn := InitOrdersService(mux, authClient)
+	defer ordersServiceConn.Close()
 	log.Printf("Server running on port%v", addr)
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
