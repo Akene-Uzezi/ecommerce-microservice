@@ -3,6 +3,7 @@ package main
 import (
 	"ecommerce-products/internal/handler"
 	shared "ecommerce-shared"
+	"fmt"
 	"log"
 	"net"
 
@@ -15,7 +16,7 @@ import (
 var productsPort = shared.GetEnvString("PRODUCTS_PORT", "7777")
 
 func main() {
-	l, err := net.Listen("tcp", productsPort)
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", productsPort))
 	if err != nil {
 		log.Fatalf("error creating product service listner: %s on port: %s", err, productsPort)
 	}

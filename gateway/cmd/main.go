@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	authpb "ecommerce-api/gen/auth"
 	orderpb "ecommerce-api/gen/order"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -31,22 +30,13 @@ func main() {
 	}
 	defer orderServiceConn.Close()
 	log.Printf("dialing orderservice at %s", orderServiceURL)
-	authServiceConn, err := grpc.NewClient(authServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("failed to connect to auth grpc service: %v", err)
-	}
-	log.Printf("dialing auth service at %s", authServiceURL)
-
-	defer authServiceConn.Close()
 
 	orderClient := orderpb.NewOrderServiceClient(orderServiceConn)
-	authClient := authpb.NewAuthServiceClient(authServiceConn)
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
+	authClient := InitAuthService(mux)
 	orderHandler := handler.NewOrderHTTPHandler(orderClient, authClient)
-	authHandler := handler.NewAuthHTTPHandler(authClient)
 	orderHandler.RegisterRoutes(mux)
-	authHandler.RegisterRoutes(mux)
 
 	log.Printf("Server running on port%v", addr)
 
