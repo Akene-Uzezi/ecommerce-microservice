@@ -28,7 +28,7 @@ func main() {
 
 	pool, err := shared.InitPool(authDBConnStr)
 	if err != nil {
-		log.Fatalf("failed to init db pool: %s", err)
+		log.Fatalf("failed to init auth db pool: %s", err)
 	}
 	authHandler := handler.NewAuthGRPCHandler(db.NewModels(pool))
 	authpb.RegisterAuthServiceServer(grpcServer, authHandler)

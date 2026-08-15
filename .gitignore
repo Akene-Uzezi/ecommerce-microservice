@@ -14,3 +14,7 @@ orders/.env
 # auth folder
 auth/tmp/
 auth/.env
+
+# products folder
+products/tmp/
+products/.env

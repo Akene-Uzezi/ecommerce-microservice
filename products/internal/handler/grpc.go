@@ -11,7 +11,7 @@ type ProductGRPCHandler struct {
 	prodcutspb.UnimplementedProductServiceServer
 }
 
-func (p *ProductGRPCHandler) NewProductGRPCHanler() *ProductGRPCHandler {
+func NewProductGRPCHandler() *ProductGRPCHandler {
 	return &ProductGRPCHandler{}
 }
 
