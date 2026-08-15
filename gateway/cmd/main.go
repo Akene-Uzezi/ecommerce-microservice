@@ -18,9 +18,9 @@ var (
 func main() {
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
-	authClient, authServiceConn := InitAuthService(mux)
+	authClient, authServiceConn := initAuthService(mux)
 	defer authServiceConn.Close()
-	_, ordersServiceConn := InitOrdersService(mux, authClient)
+	_, ordersServiceConn := initOrdersService(mux, authClient)
 	defer ordersServiceConn.Close()
 	log.Printf("Server running on port%v", addr)
 

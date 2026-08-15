@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func InitOrdersService(mux *http.ServeMux, authClient authpb.AuthServiceClient) (orderpb.OrderServiceClient, *grpc.ClientConn) {
+func initOrdersService(mux *http.ServeMux, authClient authpb.AuthServiceClient) (orderpb.OrderServiceClient, *grpc.ClientConn) {
 	orderServiceConn, err := grpc.NewClient(
 		orderServiceURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
