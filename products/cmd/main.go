@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var productsPort = shared.GetEnvString("PRODUCTS_PORT", "7777")
+var productsPort = shared.GetEnvString("PRODUCTS_PORT", "6666")
 
 func main() {
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", productsPort))

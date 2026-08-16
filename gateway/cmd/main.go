@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	gatewayPort     = shared.GetEnvString("GATEWAY_PORT", "3000")
-	orderServiceURL = shared.GetEnvString("ORDER_SERVICE_URL", "localhost:4444")
-	authServiceURL  = shared.GetEnvString("AUTH_SERVICE_URL", "localhost:5555")
+	gatewayPort        = shared.GetEnvString("GATEWAY_PORT", "3000")
+	orderServiceURL    = shared.GetEnvString("ORDER_SERVICE_URL", "localhost:4444")
+	authServiceURL     = shared.GetEnvString("AUTH_SERVICE_URL", "localhost:5555")
+	productsServiceURL = shared.GetEnvString("PRODUCTS_SERVICE_URL", "localhost:6666")
 )
 
 func main() {
@@ -22,6 +23,8 @@ func main() {
 	defer authServiceConn.Close()
 	_, ordersServiceConn := initOrdersService(mux, authClient)
 	defer ordersServiceConn.Close()
+	productsServiceConn := initProductService(mux)
+	defer productsServiceConn.Close()
 	log.Printf("Server running on port%v", addr)
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
