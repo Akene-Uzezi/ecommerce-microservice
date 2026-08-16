@@ -16,6 +16,7 @@ func initProductService(mux *http.ServeMux) *grpc.ClientConn {
 	if err != nil {
 		log.Fatalf("failed to connect with products grpc service: %s", err)
 	}
+	log.Printf("dialing products service at %s", productsServiceURL)
 	productsClient := productspb.NewProductServiceClient(productsServiceConn)
 	productsHandler := handler.NewProductsHTTPHandler(productsClient)
 	productsHandler.RegisterRoutes(mux)
