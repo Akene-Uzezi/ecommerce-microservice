@@ -106,7 +106,7 @@ func InitPool(connStr string) (*pgxpool.Pool, error) {
 
 	var pingErr error
 	count := 0
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		pingErr = pool.Ping(ctx)
 		if pingErr == nil {
 			fmt.Println("DB connection established")
@@ -114,7 +114,7 @@ func InitPool(connStr string) (*pgxpool.Pool, error) {
 		}
 		count += 1
 		fmt.Println("failed to connect to database retrying")
-		time.Sleep(700 * time.Millisecond)
+		time.Sleep(3 * time.Second)
 		if count == 10 {
 			return nil, pingErr
 		}
