@@ -3,16 +3,20 @@ package handler
 
 import (
 	"context"
+	"ecommerce-products/internal/db"
 
 	prodcutspb "ecommerce-api/gen/products"
 )
 
 type ProductGRPCHandler struct {
 	prodcutspb.UnimplementedProductServiceServer
+	models *db.Models
 }
 
-func NewProductGRPCHandler() *ProductGRPCHandler {
-	return &ProductGRPCHandler{}
+func NewProductGRPCHandler(models *db.Models) *ProductGRPCHandler {
+	return &ProductGRPCHandler{
+		models: models,
+	}
 }
 
 func (p *ProductGRPCHandler) AddProduct(ctx context.Context, req *prodcutspb.AddProductRequest) (*prodcutspb.AddProductResponse, error) {

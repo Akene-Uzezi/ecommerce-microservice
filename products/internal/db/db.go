@@ -7,6 +7,8 @@ type Models struct {
 	ProductModel ProductModel
 }
 
-func NewProductModels(db *pgxpool.Pool) *ProductModel {
-	return &ProductModel{DB: db}
+func NewModels(db *pgxpool.Pool) *Models {
+	return &Models{
+		ProductModel: ProductModel{DB: db},
+	}
 }
