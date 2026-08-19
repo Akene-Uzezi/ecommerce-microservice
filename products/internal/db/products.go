@@ -16,6 +16,6 @@ func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProduc
 	return nil, nil
 }
 
-func (m *ProductModel) GetProduct(ctx context.Context, req *productspb.GetProductsRequest) (*productspb.GetProductsResponse, error) {
+func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProductsRequest) (*productspb.GetProductsResponse, error) {
 	return nil, nil
 }

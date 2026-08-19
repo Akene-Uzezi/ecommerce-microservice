@@ -23,6 +23,10 @@ func (p *ProductGRPCHandler) AddProduct(ctx context.Context, req *prodcutspb.Add
 	return nil, nil
 }
 
-func (p *ProductGRPCHandler) GetProduct(ctx context.Context, req *prodcutspb.GetProductsRequest) (*prodcutspb.GetProductsResponse, error) {
+func (p *ProductGRPCHandler) GetProducts(ctx context.Context, req *prodcutspb.GetProductsRequest) (*prodcutspb.GetProductsResponse, error) {
+	return nil, nil
+}
+
+func (p *ProductGRPCHandler) GetProduct(ctx context.Context, req *prodcutspb.GetProductRequest) (*prodcutspb.GetProductResponse, error) {
 	return nil, nil
 }
