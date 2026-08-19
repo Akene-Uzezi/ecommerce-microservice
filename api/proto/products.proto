@@ -18,7 +18,12 @@ message GetProductsRequest { repeated Product products = 1; }
 
 message GetProductsResponse { repeated Product products = 1; }
 
+message GetProductRequest { string name = 1; }
+
+message GetProductResponse { Product product = 1; }
+
 service ProductService {
   rpc AddProduct(AddProductRequest) returns (AddProductResponse);
-  rpc GetProduct(GetProductsRequest) returns (GetProductsResponse);
+  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
 }
