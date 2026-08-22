@@ -43,6 +43,23 @@ services:
       timeout: 5s
       retries: 5
 
+  products-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product
+      POSTGRES_DB: products_db
+    ports:
+      - "7433:5432"
+    volumes:
+      - products_data:/var/lib/postgresql/data
+      - ./scripts/products_init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product -d products_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   auth:
     build:
       context: .
@@ -75,3 +92,4 @@ services:
 volumes:
   orders_data:
   auth_data:
+  products_data:
