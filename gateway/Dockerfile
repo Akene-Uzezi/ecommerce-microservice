@@ -10,7 +10,7 @@ COPY orders/go.mod ./orders/
 COPY payments/go.mod ./payments/
 COPY shared/go.mod shared/go.sum ./shared/
 COPY stock/go.mod ./stock/
-COPY products/go.mod ./products
+COPY products/go.mod ./products/
 
 RUN go mod download
 
