@@ -21,7 +21,7 @@ func NewProductsHTTPHandler(productsClient productspb.ProductServiceClient) *Pro
 
 func (h *ProductsHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/ping_products", h.pingProductsHandler)
-	mux.HandleFunc("POST /api/v1/create_product", h.createProduct)
+	mux.HandleFunc("POST /api/v1/add_product", h.addProduct)
 	mux.HandleFunc("GET /api/v1/products", h.getProducts)
 }
 
@@ -29,7 +29,7 @@ func (h *ProductsHTTPHandler) pingProductsHandler(w http.ResponseWriter, r *http
 	_ = shared.WriteJSON(w, http.StatusOK, "Products PONG")
 }
 
-func (h *ProductsHTTPHandler) createProduct(w http.ResponseWriter, r *http.Request) {
+func (h *ProductsHTTPHandler) addProduct(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	var requestBody productspb.AddProductRequest
 	if err := shared.ReadJSON(r, &requestBody); err != nil {
