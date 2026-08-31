@@ -23,11 +23,10 @@ COPY ./shared/ ./shared
 COPY ./stock/ ./stock
 COPY ./products ./products
 
-WORKDIR /workspace/gateway
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/gateway ./cmd
+WORKDIR /workspace/products
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/products ./cmd
 
 FROM alpine:latest
-COPY --from=builder /bin/gateway /bin/gateway
-EXPOSE 3000
-
-ENTRYPOINT [ "/bin/gateway" ]
+COPY --from=builder /bin/orders /bin/products
+EXPOSE 4444
+ENTRYPOINT [ "/bin/orders" ]

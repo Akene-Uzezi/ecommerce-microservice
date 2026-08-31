@@ -10,6 +10,7 @@ COPY orders/go.mod ./orders/
 COPY payments/go.mod ./payments/
 COPY shared/go.mod shared/go.sum ./shared/
 COPY stock/go.mod ./stock/
+COPY products/go.mod ./products
 
 RUN go mod download
 
@@ -20,6 +21,7 @@ COPY ./orders/ ./orders
 COPY ./payments/ ./payments
 COPY ./shared/ ./shared
 COPY ./stock/ ./stock
+COPY ./products ./products
 
 WORKDIR /workspace/orders
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/orders ./cmd
