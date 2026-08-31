@@ -8,5 +8,5 @@ type Models struct {
 }
 
 func NewModels(db *pgxpool.Pool) *Models {
-	return &ProductModel{DB: db}
+	return &Models{ProductModel: ProductModel{DB: db}}
 }
