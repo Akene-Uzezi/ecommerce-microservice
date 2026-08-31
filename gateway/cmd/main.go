@@ -13,7 +13,7 @@ var (
 	gatewayPort        = shared.GetEnvString("GATEWAY_PORT", "3000")
 	orderServiceURL    = shared.GetEnvString("ORDER_SERVICE_URL", "localhost:4444")
 	authServiceURL     = shared.GetEnvString("AUTH_SERVICE_URL", "localhost:5555")
-	productsServiceURL = shared.GetEnvString("PRODUCTS_SERVICE_URL", "localhost:6666")
+	productsServiceURL = shared.GetEnvString("PRODUCTS_SERVICE_URL", "localhost:7777")
 )
 
 func main() {
