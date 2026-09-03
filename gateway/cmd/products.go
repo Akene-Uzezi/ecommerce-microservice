@@ -5,13 +5,14 @@ import (
 	"log"
 	"net/http"
 
+	authpb "ecommerce-api/gen/auth"
 	productspb "ecommerce-api/gen/products"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func initProductService(mux *http.ServeMux) *grpc.ClientConn {
+func initProductService(mux *http.ServeMux, authClient authpb.AuthServiceClient) *grpc.ClientConn {
 	productsServiceConn, err := grpc.NewClient(productsServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect with products grpc service: %s", err)

@@ -26,7 +26,7 @@ func main() {
 	defer authServiceConn.Close()
 	_, ordersServiceConn := initOrdersService(mux, authClient)
 	defer ordersServiceConn.Close()
-	productsServiceConn := initProductService(mux)
+	productsServiceConn := initProductService(mux, authClient)
 	defer productsServiceConn.Close()
 	log.Printf("Server running on port%v", addr)
 
