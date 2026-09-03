@@ -18,7 +18,7 @@ func initProductService(mux *http.ServeMux) *grpc.ClientConn {
 	}
 	log.Printf("dialing products service at %s", productsServiceURL)
 	productsClient := productspb.NewProductServiceClient(productsServiceConn)
-	productsHandler := handler.NewProductsHTTPHandler(productsClient)
+	productsHandler := handler.NewProductsHTTPHandler(productsClient, authClient)
 	productsHandler.RegisterRoutes(mux)
 	return productsServiceConn
 }

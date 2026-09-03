@@ -1,26 +1,30 @@
 package handler
 
 import (
+	"ecommerce-gateway/internal/middleware"
 	shared "ecommerce-shared"
 	"log"
 	"net/http"
 	"time"
 
+	authpb "ecommerce-api/gen/auth"
 	productspb "ecommerce-api/gen/products"
 )
 
 type ProductsHTTPHandler struct {
 	productsClient productspb.ProductServiceClient
+	authClient     authpb.AuthServiceClient
 }
 
-func NewProductsHTTPHandler(productsClient productspb.ProductServiceClient) *ProductsHTTPHandler {
+func NewProductsHTTPHandler(productsClient productspb.ProductServiceClient, authClient authpb.AuthServiceClient) *ProductsHTTPHandler {
 	return &ProductsHTTPHandler{
 		productsClient: productsClient,
+		authClient:     authClient,
 	}
 }
 
 func (h *ProductsHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/ping_products", h.pingProductsHandler)
+	mux.HandleFunc("GET /api/v1/ping_products", middleware.RequireAuth(h.authClient)(h.pingProductsHandler))
 	mux.HandleFunc("POST /api/v1/add_product", h.addProduct)
 	mux.HandleFunc("GET /api/v1/products", h.getProducts)
 }

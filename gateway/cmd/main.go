@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	authpb "ecommerce-api/gen/auth"
+
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -14,6 +16,7 @@ var (
 	orderServiceURL    = shared.GetEnvString("ORDER_SERVICE_URL", "localhost:4444")
 	authServiceURL     = shared.GetEnvString("AUTH_SERVICE_URL", "localhost:5555")
 	productsServiceURL = shared.GetEnvString("PRODUCTS_SERVICE_URL", "localhost:7777")
+	authClient         authpb.AuthServiceClient
 )
 
 func main() {
