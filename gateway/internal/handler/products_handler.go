@@ -24,9 +24,9 @@ func NewProductsHTTPHandler(productsClient productspb.ProductServiceClient, auth
 }
 
 func (h *ProductsHTTPHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/ping_products", middleware.RequireAuth(h.authClient)(h.pingProductsHandler))
-	mux.HandleFunc("POST /api/v1/add_product", h.addProduct)
-	mux.HandleFunc("GET /api/v1/products", h.getProducts)
+	mux.HandleFunc("GET /api/v1/ping_products", h.pingProductsHandler)
+	mux.HandleFunc("POST /api/v1/add_product", middleware.RequireAuth(h.authClient)(h.addProduct))
+	mux.HandleFunc("GET /api/v1/products", middleware.RequireAuth(h.authClient)(h.getProducts))
 }
 
 func (h *ProductsHTTPHandler) pingProductsHandler(w http.ResponseWriter, r *http.Request) {
