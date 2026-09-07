@@ -60,6 +60,20 @@ services:
       timeout: 5s
       retries: 5
 
+  products:
+    build:
+      context: .
+      dockerfile: products/Dockerfile
+    depends_on:
+      products-db:
+        condition: service_healthy
+    environment:
+      - PRODUCTS_DB_CONN_STR=postgres://product:product@products-db:5432/products_db
+    ports:
+      - "7777:7777"
+    env_file:
+      - ./products/.env
+
   auth:
     build:
       context: .
