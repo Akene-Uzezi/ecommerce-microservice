@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	productspb "ecommerce-api/gen/products"
 
@@ -12,8 +13,31 @@ type ProductModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*productspb.AddProductResponse, error) {
-	return nil, nil
+type Product struct {
+	ID       int
+	Name     string
+	Price    float32
+	Quantity int
+}
+
+func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*Product, error) {
+	var createdProduct Product
+	name := req.Product.Name
+	price := req.Product.Price
+	quantity := req.Product.Quantity
+	query := `
+		INSERT INTO products
+		(name, price, quantity)
+		VALUES ($1, $2, $3)
+		RETURNING id, name, price, quantity
+	`
+	err := m.DB.QueryRow(ctx, query, name, price, quantity).Scan(
+		&createdProduct.ID, &createdProduct.Name, &createdProduct.Price, &createdProduct.Quantity,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database query error %v", err)
+	}
+	return &createdProduct, nil
 }
 
 func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProductsRequest) (*productspb.GetProductsResponse, error) {
