@@ -20,7 +20,11 @@ func NewProductGRPCHandler(models *db.Models) *ProductGRPCHandler {
 }
 
 func (p *ProductGRPCHandler) AddProduct(ctx context.Context, req *prodcutspb.AddProductRequest) (*prodcutspb.AddProductResponse, error) {
-	return nil, nil
+	product, err := p.models.ProductModel.AddProduct(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }
 
 func (p *ProductGRPCHandler) GetProducts(ctx context.Context, req *prodcutspb.GetProductsRequest) (*prodcutspb.GetProductsResponse, error) {

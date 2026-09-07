@@ -20,8 +20,8 @@ type Product struct {
 	Quantity int
 }
 
-func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*Product, error) {
-	var createdProduct Product
+func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*productspb.AddProductResponse, error) {
+	var createdProduct productspb.AddProductResponse
 	name := req.Product.Name
 	price := req.Product.Price
 	quantity := req.Product.Quantity
@@ -32,7 +32,7 @@ func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProduc
 		RETURNING id, name, price, quantity
 	`
 	err := m.DB.QueryRow(ctx, query, name, price, quantity).Scan(
-		&createdProduct.ID, &createdProduct.Name, &createdProduct.Price, &createdProduct.Quantity,
+		&createdProduct.Product.Name, &createdProduct.Product.Price, &createdProduct.Product.Quantity,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query error %v", err)
