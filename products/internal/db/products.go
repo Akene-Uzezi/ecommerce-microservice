@@ -6,6 +6,7 @@ import (
 
 	productspb "ecommerce-api/gen/products"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -45,5 +46,11 @@ func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProdu
 }
 
 func (m *ProductModel) GetProduct(ctx context.Context, req *productspb.GetProductRequest) (*productspb.GetProductResponse, error) {
+	query := `
+		SELECT * FROM products
+		WHERE name = $1
+	`
+	row := m.DB.QueryRow(ctx, query, req.Name)
+	product, err := pgx.CollectOneRow(row)
 	return nil, nil
 }
