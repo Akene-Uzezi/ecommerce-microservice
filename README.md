@@ -12,19 +12,21 @@ graph TB
     Orders[Orders Service :4444]
     Payments[Payments Service]
     Stock[Stock Service]
-    Products[Products Service]
+    Products[Products Service :7777]
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
+    ProductsDB[(Products DB :7433)]
 
     Client -->|HTTP/JSON| Gateway
     Gateway -->|gRPC| Auth
     Gateway -->|gRPC| Orders
+    Gateway -->|gRPC| Products
     Gateway -.->|planned| Payments
     Gateway -.->|planned| Stock
-    Gateway -.->|planned| Products
 
     Auth --> AuthDB
     Orders -.->|not yet wired| OrdersDB
+    Products --> ProductsDB
 ```
 
 The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services.
@@ -35,12 +37,12 @@ Solid lines are implemented today; dashed lines are planned. For a more detailed
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| Gateway | Working | HTTP → gRPC proxy for auth and orders, with request logging and JWT auth middleware on protected routes |
+| Gateway | Working | HTTP → gRPC proxy for auth, orders, and products, with request logging and JWT auth middleware on protected routes |
 | Auth | Working | `CreateUser` and `Login` (JWT) backed by PostgreSQL |
-| Orders | Stub | `CreateOrder` returns hardcoded data; no DB access yet |
+| Orders | Stub | `CreateOrder` returns hardcoded data; `GetOrder` declared in proto but not implemented; no DB access yet |
+| Products | Working | `AddProduct` and `GetProducts`/`GetProduct` backed by PostgreSQL on `:7777`; in `docker-compose.yml` and wired in gateway |
 | Payments | Scaffold | `go.mod` only, empty `cmd/`/`internal/`, empty Dockerfile |
 | Stock | Scaffold | `go.mod` only, empty `cmd/`/`internal/`, empty Dockerfile |
-| Products | In Progress | `internal/db` models and an `internal/handler` gRPC handler stub exist, but no `cmd/main.go`, no Dockerfile, and no DB wiring yet |
 
 ## Tech Stack
 
@@ -93,10 +95,11 @@ ecommerce-microservices/
 │   ├── cmd/main.go          # HTTP server + gRPC client dialing
 │   ├── internal/
 │   │   ├── handler/
-│   │   │   ├── handler.go       # ping + order routes (order route auth-protected)
-│   │   │   ├── auth_handler.go  # create_user + login + search_users routes
-│   │   │   ├── users.go         # search_users route handler
-│   │   │   └── types.go         # Request payload types
+│   │   │   ├── handler.go        # ping route
+│   │   │   ├── auth_handler.go   # create_user + login + search_users routes
+│   │   │   ├── users.go          # search_users route handler
+│   │   │   ├── products_handler.go # ping_products, add_product, products routes
+│   │   │   └── types.go          # Request payload types
 │   │   └── middleware/
 │   │       └── auth.go           # RequireAuth JWT verification middleware
 │   ├── Dockerfile           # Multi-stage build
@@ -111,14 +114,21 @@ ecommerce-microservices/
 │   └── .env.example
 ├── payments/                # Payments microservice (scaffold: go.mod + empty Dockerfile)
 ├── stock/                   # Stock microservice (scaffold: go.mod + empty Dockerfile)
-├── products/                 # Products microservice (in progress: db + handler stubs, no server/Dockerfile)
-│   ├── cmd/                   # empty (no server entrypoint yet)
+├── products/                 # Products microservice
+│   ├── cmd/
+│   │   ├── main.go           # gRPC server entry point
+│   │   └── main_test.go      # End-to-end gRPC server tests with testcontainer DB
 │   ├── internal/
 │   │   ├── db/
 │   │   │   ├── db.go          # ProductModel + NewProductModels (pgxpool injection)
-│   │   │   └── products.go    # ProductModel struct (DB field, no methods yet)
+│   │   │   ├── products.go    # AddProduct, GetProducts, GetProduct SQL methods
+│   │   │   ├── db_test.go     # TestMain provisioning testcontainer pool
+│   │   │   └── products_test.go # Placeholder tests
 │   │   └── handler/
-│   │       └── grpc.go        # ProductGRPCHandler: CreateProduct, GetProduct (stubs return nil)
+│   │       └── grpc.go        # ProductGRPCHandler: AddProduct, GetProducts, GetProduct
+│   ├── Dockerfile
+│   ├── .air.toml
+│   ├── .env
 │   └── go.mod
 ├── shared/                    # Common utilities module
 │   ├── env.go               # GetEnvString(key, fallback)
@@ -154,7 +164,7 @@ Canonical source of truth for all service interfaces. Contains `.proto` definiti
 | `order.proto` | `OrderService` | `CreateOrder`, `GetOrder` |
 | `payment.proto` | `PaymentService` | `ProcessPayment` |
 | `stock.proto` | `StockService` | `CheckStock`, `ReserveStock` |
-| `products.proto` | `ProductService` | `CreateProduct`, `GetProduct` |
+| `products.proto` | `ProductService` | `AddProduct`, `GetProducts`, `GetProduct` |
 
 > `api/gen/` is gitignored. Run `make gen` before building anything, or compilation will fail.
 
@@ -169,8 +179,11 @@ Listens on `:3000`.
 | `GET` | `/api/v1/ping` | Health check, returns `"pong"` | 200 |
 | `POST` | `/api/v1/create_user` | Creates a user via the Auth service | 201 |
 | `POST` | `/api/v1/login` | Authenticates and returns a JSON object with the JWT `token` and the user's `email` | 200 |
-| `POST` | `/api/v1/orders` | Creates an order via the Orders service (requires a Bearer token) | 201 |
 | `GET` | `/api/v1/search_users` | Looks up a user by the `email` query parameter via the Auth service (requires a Bearer token) | 200 |
+| `POST` | `/api/v1/orders` | Creates an order via the Orders service (requires a Bearer token) | 201 |
+| `GET` | `/api/v1/ping_products` | Checks connectivity to the Products service (requires a Bearer token) | 200 |
+| `POST` | `/api/v1/add_product` | Adds a product via the Products service (requires a Bearer token) | 201 |
+| `GET` | `/api/v1/products` | Lists all products via the Products service (requires a Bearer token) | 200 |
 
 Every handler emits a request log line via the `shared` logging helpers in the form `METHOD URI STATUS DURATION`.
 
@@ -211,13 +224,13 @@ Module scaffold only. Intended to handle `CheckStock(product_id, quantity)` and 
 
 ### Products Service (`products/`)
 
-Partially implemented. Intended to handle `CreateProduct(Product)` and `GetProduct(repeated Product)`.
+gRPC on `:7777`. Implemented with DB-backed handlers and wired into both the gateway and `docker-compose.yml`.
 
-- `internal/db/db.go` — `ProductModel` and `NewProductModels(pool)` for `pgxpool` injection.
-- `internal/db/products.go` — `ProductModel` struct holding the `*pgxpool.Pool` (no query methods yet).
-- `internal/handler/grpc.go` — `ProductGRPCHandler` implementing the gRPC server interface with `CreateProduct` and `GetProduct` stubs that currently return `nil`.
-- No `cmd/main.go` server entrypoint, no Dockerfile, and no DB wiring yet, so it is not runnable or part of docker-compose.
-- The `ProductService` interface is defined in `api/proto/products.proto` and its gRPC stubs are generated by `make gen` into `api/gen/products`.
+- `internal/db/products.go` — `ProductModel` with `AddProduct`, `GetProducts`, and `GetProduct` using pgxpool.
+- `internal/handler/grpc.go` — `ProductGRPCHandler` implementing the gRPC server interface.
+- `cmd/main.go` — gRPC server entry point.
+- `Dockerfile` — Multi-stage alpine build exposing `7777`.
+- Database: `products_db` on `:7433` via docker-compose, initialized by `scripts/products_init.sql`.
 
 ### Shared (`shared/`)
 
@@ -227,7 +240,8 @@ Common utilities imported by the other modules as `ecommerce-shared`:
 - `json.go` — `WriteJSON`, `ReadJSON`
 - `error.go` — `WriteErrorBadRequest`, `WriteErrorServerError`, `WriteErrorUnauthorized`
 - `status_log.go` — `LogOK`, `LogBadRequest`, `LogInternalServerError`, `LogNotFound`, `LogUnauthorized`
-- `db.go` — `SetupTestDBSuite(sql)`: provisions a testcontainer PostgreSQL 16 pool (max 10 / min 2 conns, ping retry), locates the workspace root, applies the given schema SQL, and returns a `*pgxpool.Pool` plus a teardown func
+- `db.go` — `SetupTestDBSuite(sql)`: provisions a testcontainer PostgreSQL 16 pool (max 10 / min 2 conns, ping retry), locates the workspace root, applies the given schema SQL, and returns a `*pgxpool.Pool` plus a teardown func; `InitPool(connStr)` creates a production pool with ping retry
+- `url.go` — `Query(r *http.Request, key string)` wrapper for `r.URL.Query().Get`
 
 ## Prerequisites
 
@@ -295,13 +309,15 @@ This starts:
 |-----------|------|-------------|
 | `orders-db` | 5433 → 5432 | PostgreSQL 16, healthchecked |
 | `auth-db` | 6433 → 5432 | PostgreSQL 16, healthchecked, runs `auth_init.sql` |
+| `products-db` | 7433 → 5432 | PostgreSQL 16, healthchecked, runs `products_init.sql` |
 | `orders` | 4445 → 4444 | Orders gRPC service |
 | `auth` | 5556 → 5555 | Auth gRPC service |
+| `products` | 7777 → 7777 | Products gRPC service |
 | `gateway` | 3001 → 3000 | Public HTTP API |
 
 > When run via Docker Compose, the Gateway is published on host port **3001**, so use `http://localhost:3001` for the requests in the "Try it out" section below. Running the services locally with `go run` keeps the Gateway on `3000`.
 
-Inside Compose, service discovery uses container names (`auth:5555`, `orders:4444`, `auth-db:5432`) via overridden environment variables.
+Inside Compose, service discovery uses container names (`auth:5555`, `orders:4444`, `products:7777`, `auth-db:5432`, `products-db:5432`) via overridden environment variables.
 
 > The payments and stock services are not yet part of docker-compose.
 
@@ -324,7 +340,20 @@ curl -X POST http://localhost:3000/api/v1/login \
 # Create an order (stub response)
 curl -X POST http://localhost:3000/api/v1/orders \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT" \
   -d '{"customer_id":"1","items":[{"product_id":"3","quantity":3,"price":10.62}]}'
+
+# Check products service connectivity
+curl -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/api/v1/ping_products
+
+# Add a product
+curl -X POST http://localhost:3000/api/v1/add_product \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT" \
+  -d '{"name":"Widget","price":9.99,"quantity":100}'
+
+# List products
+curl -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/api/v1/products
 ```
 
 ## Development
@@ -357,9 +386,12 @@ Because modules are separate, build and test from within a module directory (for
 | `GATEWAY_PORT` | `3000` | gateway |
 | `ORDER_SERVICE_URL` | `localhost:4444` | gateway |
 | `AUTH_SERVICE_URL` | `localhost:5555` | gateway |
+| `PRODUCTS_SERVICE_URL` | `localhost:7777` | gateway |
 | `ORDERS_PORT` | `4444` | orders |
 | `AUTH_PORT` | `5555` | auth |
+| `PRODUCTS_PORT` | `7777` | products |
 | `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth |
+| `PRODUCTS_DB_CONN_STR` | `postgres://product:product@localhost:7433/products_db` | products |
 | `jwt_secret` | `secret` | auth |
 
 All values are loaded through `godotenv/autoload` from the service's `.env` file, with the defaults above as fallbacks.
@@ -405,9 +437,11 @@ Assertions use `github.com/stretchr/testify/assert`.
 - `Orders.CreateOrder` returns hardcoded values and ignores the request payload.
 - `Orders.GetOrder` is declared in the proto but not implemented.
 - Orders, payments, and stock init SQL scripts are empty.
-- The Products service has DB models and a gRPC handler but no server entrypoint, Dockerfile, or DB wiring yet.
+- The `shared.ReadJSON` helper has a bug that prevents request body parsing.
+- Products DB layer has runtime bugs (nil pointer in `AddProduct`, struct tag mismatches in `GetProducts`/`GetProduct`).
 - All gRPC connections use insecure transport credentials.
-- Tests currently only cover the `auth` module; gateway, orders, payments, and stock have no tests yet.
+- Tests currently only cover the `auth` and `products` modules; gateway, orders, payments, and stock have no tests yet.
+- Placeholder/empty tests exist in `auth/internal/handler/usershandler_test.go` and `products/internal/db/products_test.go`.
 
 ## Roadmap
 
@@ -418,13 +452,14 @@ Assertions use `github.com/stretchr/testify/assert`.
 - [x] Request logging middleware helpers
 - [x] Docker / docker-compose setup
 - [x] JWT verification middleware in the gateway
+- [x] Products service server, Dockerfile, and DB wiring
 - [ ] Orders DB integration and real `CreateOrder` / `GetOrder`
-- [x] Products service DB models and gRPC handler stubs
-- [ ] Products service server entrypoint, Dockerfile, and DB wiring
+- [ ] Fix Products DB runtime bugs (nil pointer, struct tags)
+- [ ] Fix `shared.ReadJSON` request body parsing bug
 - [ ] Stock service implementation
 - [ ] Payments service implementation
 - [ ] Order saga: orders → stock reservation → payment
 - [ ] Service discovery / centralized config
-- [ ] TLS / production hardening
 - [x] Auth service tests (unit + integration; spins up a real PostgreSQL via testcontainers)
+- [x] Products service tests (integration; spins up a real PostgreSQL via testcontainers)
 - [ ] Expand testing suite to gateway, orders, payments, and stock

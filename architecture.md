@@ -10,22 +10,24 @@ graph TB
     Orders[Orders Service :4444]
     Payments[Payments Service]
     Stock[Stock Service]
-    Products[Products Service]
+    Products[Products Service :7777]
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
+    ProductsDB[(Products DB :7433)]
 
     Client -->|HTTP/JSON| Gateway
     Gateway -->|gRPC| Auth
     Gateway -->|gRPC| Orders
+    Gateway -->|gRPC| Products
     Gateway -.->|planned| Payments
     Gateway -.->|planned| Stock
-    Gateway -.->|planned| Products
 
     Auth --> AuthDB
     Orders -.->|not yet wired| OrdersDB
+    Products --> ProductsDB
 ```
 
-Solid lines are implemented today; dashed lines are planned. The Payments and Stock services are scaffolds (no Go source, no containers). The Products service has DB models and a gRPC handler stub but no server entrypoint, Dockerfile, or DB wiring yet, and no container. Their databases do not exist yet. The Orders service runs but does not yet connect to `orders-db`.
+Solid lines are implemented today; dashed lines are planned. The Payments and Stock services are scaffolds (no Go source, no containers). The Products service has a working gRPC server, Dockerfile, DB models with real SQL, and is connected to `products-db` on `:7433`. The Orders service runs but does not yet connect to `orders-db`.
 
 ## Request Flow
 
@@ -78,9 +80,9 @@ graph LR
 
 | Service | Port | Protocol | Database | Purpose |
 |---------|------|----------|----------|---------|
-| Gateway | 3000 | HTTP/JSON | — | Public API entrypoint; gRPC client to Auth/Orders; JWT auth middleware on protected routes |
+| Gateway | 3000 | HTTP/JSON | — | Public API entrypoint; gRPC client to Auth/Orders/Products; JWT auth middleware on protected routes |
 | Auth | 5555 | gRPC | :6433 | User creation, authentication, token verification, user lookup |
 | Orders | 4444 | gRPC | :5433 (unused) | Order creation (stub) and retrieval (unimplemented) |
+| Products | 7777 | gRPC | :7433 | Product catalog management with DB-backed handlers |
 | Payments | — | gRPC (planned) | — (planned) | Payment processing (scaffold) |
 | Stock | — | gRPC (planned) | — (planned) | Inventory management (scaffold) |
-| Products | — | gRPC (planned) | — (planned) | Product catalog management (db + handler stubs, no server/Dockerfile) |
