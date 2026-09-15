@@ -42,7 +42,20 @@ func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProduc
 }
 
 func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProductsRequest) (*productspb.GetProductsResponse, error) {
-	return nil, nil
+	query := `
+		SELECT * FROM products
+	`
+	rows, err := m.DB.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("database query error %v", err)
+	}
+	products, err := pgx.CollectRows(rows, pgx.RowToStructByName[Product])
+	if err != nil {
+		return nil, fmt.Errorf("database query error %v", err)
+	}
+	return &productspb.GetProductsResponse{
+		Products: products,
+	}, nil
 }
 
 func (m *ProductModel) GetProduct(ctx context.Context, req *productspb.GetProductRequest) (*productspb.GetProductResponse, error) {
