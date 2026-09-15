@@ -54,7 +54,7 @@ func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProdu
 		return nil, fmt.Errorf("database query error %v", err)
 	}
 	return &productspb.GetProductsResponse{
-		Products: products,
+		Products: []*productspb.Product{products},
 	}, nil
 }
 
