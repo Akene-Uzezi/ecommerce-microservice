@@ -28,7 +28,11 @@ func (p *ProductGRPCHandler) AddProduct(ctx context.Context, req *prodcutspb.Add
 }
 
 func (p *ProductGRPCHandler) GetProducts(ctx context.Context, req *prodcutspb.GetProductsRequest) (*prodcutspb.GetProductsResponse, error) {
-	return nil, nil
+	products, err := p.models.ProductModel.GetProducts(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
 func (p *ProductGRPCHandler) GetProduct(ctx context.Context, req *prodcutspb.GetProductRequest) (*prodcutspb.GetProductResponse, error) {
