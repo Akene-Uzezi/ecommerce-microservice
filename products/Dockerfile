@@ -27,6 +27,6 @@ WORKDIR /workspace/products
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/products ./cmd
 
 FROM alpine:latest
-COPY --from=builder /bin/orders /bin/products
-EXPOSE 4444
-ENTRYPOINT [ "/bin/orders" ]
+COPY --from=builder /bin/products /bin/products
+EXPOSE 7777
+ENTRYPOINT [ "/bin/products" ]
