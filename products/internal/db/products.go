@@ -50,7 +50,19 @@ func (m *ProductModel) GetProduct(ctx context.Context, req *productspb.GetProduc
 		SELECT * FROM products
 		WHERE name = $1
 	`
-	row := m.DB.QueryRow(ctx, query, req.Name)
-	product, err := pgx.CollectOneRow(row)
-	return nil, nil
+	rows, err := m.DB.Query(ctx, query, req.Name)
+	if err != nil {
+		return nil, fmt.Errorf("database query error %v", err)
+	}
+	product, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Product])
+	if err != nil {
+		return nil, fmt.Errorf("database query error %v", err)
+	}
+	return &productspb.GetProductResponse{
+		Product: &productspb.Product{
+			Name:     product.Name,
+			Price:    float64(product.Price),
+			Quantity: uint32(product.Quantity),
+		},
+	}, nil
 }
