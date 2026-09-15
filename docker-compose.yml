@@ -98,6 +98,7 @@ services:
     environment:
       - AUTH_SERVICE_URL=auth:5555
       - ORDER_SERVICE_URL=orders:4444
+      - PRODUCTS_SERVICE_URL=products:7777
     ports:
       - "3001:3000"
     env_file:
