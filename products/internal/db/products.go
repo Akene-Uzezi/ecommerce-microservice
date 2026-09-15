@@ -21,6 +21,10 @@ type Product struct {
 	Quantity int
 }
 
+func NewProductModel(db *pgxpool.Pool) *ProductModel {
+	return &ProductModel{DB: db}
+}
+
 func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*productspb.AddProductResponse, error) {
 	var createdProduct productspb.AddProductResponse
 	name := req.Product.Name
