@@ -32,5 +32,9 @@ func (p *ProductGRPCHandler) GetProducts(ctx context.Context, req *prodcutspb.Ge
 }
 
 func (p *ProductGRPCHandler) GetProduct(ctx context.Context, req *prodcutspb.GetProductRequest) (*prodcutspb.GetProductResponse, error) {
-	return nil, nil
+	product, err := p.models.ProductModel.GetProduct(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }
