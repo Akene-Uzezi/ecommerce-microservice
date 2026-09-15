@@ -53,8 +53,16 @@ func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProdu
 	if err != nil {
 		return nil, fmt.Errorf("database query error %v", err)
 	}
+	var pbproducts []*productspb.Product
+	for _, p := range products {
+		pbproducts = append(pbproducts, &productspb.Product{
+			Name:     p.Name,
+			Price:    float64(p.Price),
+			Quantity: uint32(p.Quantity),
+		})
+	}
 	return &productspb.GetProductsResponse{
-		Products: []*productspb.Product{products},
+		Products: pbproducts,
 	}, nil
 }
 
