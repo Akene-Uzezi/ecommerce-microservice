@@ -53,7 +53,7 @@ func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProdu
 	if err != nil {
 		return nil, fmt.Errorf("database query error %v", err)
 	}
-	var pbproducts []*productspb.Product
+	pbproducts := make([]*productspb.Product, 0, len(products))
 	for _, p := range products {
 		pbproducts = append(pbproducts, &productspb.Product{
 			Name:     p.Name,
