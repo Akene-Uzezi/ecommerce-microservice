@@ -9,7 +9,7 @@ git commit -m "$message"
 read -p "Do you want to push changes(y/n): " choice
 if [ "$choice" = "y" ]; then
   echo "pushing changes..."
-  git push
+  git push >/dev/null 2>&1
 else
   clear
   echo "push canceled by you"
