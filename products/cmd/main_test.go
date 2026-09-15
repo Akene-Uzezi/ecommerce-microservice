@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", productsPort))
 	if err != nil {
-		log.Fatal("failed to listen on products port: %s", err)
+		log.Fatalf("failed to listen on products port: %s", err)
 	}
 
 	grpcServer := grpc.NewServer()

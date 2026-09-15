@@ -17,7 +17,7 @@ var (
 func TestMain(m *testing.M) {
 	pool, cleanup, err := shared.SetupTestDBSuite("/scripts/products_init.sql")
 	if err != nil {
-		log.Fatal("failed to init test db %v", err)
+		log.Fatalf("failed to init test db %v", err)
 	}
 	testPool = pool
 	productModel = NewProductModel(testPool)
