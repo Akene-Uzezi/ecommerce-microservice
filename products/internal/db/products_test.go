@@ -25,3 +25,6 @@ func TestAddProduct(t *testing.T) {
 	_, err := productModel.AddProduct(ctx, req)
 	assert.NoError(t, err)
 }
+
+func TestGetProduct(t *testing.T) {
+}
