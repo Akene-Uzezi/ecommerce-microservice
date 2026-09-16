@@ -27,4 +27,17 @@ func TestAddProduct(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
+	ctx := context.Background()
+	req := &productspb.GetProductRequest{
+		Name: "testproduct",
+	}
+	_, err := productModel.GetProduct(ctx, req)
+	assert.NoError(t, err)
+}
+
+func TestGetProducts(t *testing.T) {
+	ctx := context.Background()
+	req := &productspb.GetProductsRequest{}
+	_, err := productModel.GetProducts(ctx, req)
+	assert.NoError(t, err)
 }
