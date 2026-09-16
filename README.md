@@ -82,7 +82,7 @@ ecommerce-microservices/
 │   │   │   ├── db.go        # pgxpool initialization with ping retry
 │   │   │   └── users.go     # UserModel: CreateUser, GetUserByEmail
 │   │   ├── handler/
-│   │   │   ├── grpc.go      # AuthGRPCHandler setup + DB pool injection
+│   │   │   ├── grpc.go      # AuthGRPCHanlder setup + DB pool injection (note: typo in struct name)
 │   │   │   ├── users.go     # CreateUser + SearchUsersByEmail
 │   │   │   ├── token.go     # Login + VerifyToken (JWT issuance/verification)
 │   │   │   └── types.go     # Claims struct
@@ -92,11 +92,15 @@ ecommerce-microservices/
 │   ├── .air.toml
 │   └── .env.example
 ├── gateway/                 # HTTP API Gateway
-│   ├── cmd/main.go          # HTTP server + gRPC client dialing
+│   ├── cmd/
+│   │   ├── main.go          # HTTP server + gRPC client dialing
+│   │   ├── auth.go          # Auth service client + route registration
+│   │   ├── orders.go        # Orders service client + route registration
+│   │   └── products.go      # Products service client + route registration
 │   ├── internal/
 │   │   ├── handler/
 │   │   │   ├── handler.go        # ping route
-│   │   │   ├── auth_handler.go   # create_user + login + search_users routes
+│   │   │   ├── auth_handler.go   # create_user + login routes
 │   │   │   ├── users.go          # search_users route handler
 │   │   │   ├── products_handler.go # ping_products, add_product, products routes
 │   │   │   └── types.go          # Request payload types
@@ -104,7 +108,8 @@ ecommerce-microservices/
 │   │       └── auth.go           # RequireAuth JWT verification middleware
 │   ├── Dockerfile           # Multi-stage build
 │   ├── .air.toml
-│   └── .env.example
+│   ├── .env.example
+│   └── .env
 ├── orders/                  # Orders microservice
 │   ├── cmd/main.go          # gRPC server entry point
 │   ├── internal/handler/
@@ -231,6 +236,8 @@ gRPC on `:7777`. Implemented with DB-backed handlers and wired into both the gat
 - `cmd/main.go` — gRPC server entry point.
 - `Dockerfile` — Multi-stage alpine build exposing `7777`.
 - Database: `products_db` on `:7433` via docker-compose, initialized by `scripts/products_init.sql`.
+
+> **Known issues**: `cmd/main.go` has a default port fallback of `"6666"` instead of `"7777"`; `Price` uses `float32` which may not scan cleanly from PostgreSQL `NUMERIC(10,2)`; the handler import alias is misspelled as `prodcutspb`.
 
 ### Shared (`shared/`)
 
@@ -381,6 +388,8 @@ Because modules are separate, build and test from within a module directory (for
 
 ### Environment variables
 
+All values are loaded through `godotenv/autoload` from the service's `.env` file. `.env` files now exist for `gateway`, `orders`, and `products` in addition to `.env.example` templates.
+
 | Variable | Default | Service |
 |----------|---------|---------|
 | `GATEWAY_PORT` | `3000` | gateway |
@@ -394,9 +403,9 @@ Because modules are separate, build and test from within a module directory (for
 | `PRODUCTS_DB_CONN_STR` | `postgres://product:product@localhost:7433/products_db` | products |
 | `jwt_secret` | `secret` | auth |
 
-All values are loaded through `godotenv/autoload` from the service's `.env` file, with the defaults above as fallbacks.
-
 > `jwt_secret` is intentionally lowercase in the code and is not present in `auth/.env.example`. Set it explicitly before deploying anywhere real.
+
+> **Note**: The repository root also contains a `go.mod` declaring `module ecommerce-api`, which conflicts with `api/go.mod`. Consider removing the root `go.mod` to avoid workspace issues.
 
 ### Hot reload with air
 
@@ -439,9 +448,16 @@ Assertions use `github.com/stretchr/testify/assert`.
 - Orders, payments, and stock init SQL scripts are empty.
 - The `shared.ReadJSON` helper has a bug that prevents request body parsing.
 - Products DB layer has runtime bugs (nil pointer in `AddProduct`, struct tag mismatches in `GetProducts`/`GetProduct`).
+- `products/cmd/main.go` uses a default port fallback of `"6666"` instead of `"7777"`.
+- `products/internal/db/products.go` uses `float32` for `Price` while the Postgres column is `NUMERIC(10,2)`, which may cause scan failures.
+- `auth/internal/handler/grpc.go` contains a typo: `AuthGRPCHanlder` (missing `d`).
+- `products/internal/handler/grpc.go` contains a typo: import alias `prodcutspb`.
+- `gateway/cmd/main.go` has a log formatting typo: `"Server running on port%v"` (missing space).
+- `auth/internal/db/db_test.go` has a typo: `"failed to init tesd db"`.
 - All gRPC connections use insecure transport credentials.
 - Tests currently only cover the `auth` and `products` modules; gateway, orders, payments, and stock have no tests yet.
 - Placeholder/empty tests exist in `auth/internal/handler/usershandler_test.go` and `products/internal/db/products_test.go`.
+- Root `go.mod` declares `module ecommerce-api`, conflicting with the `api/go.mod` module name.
 
 ## Roadmap
 
