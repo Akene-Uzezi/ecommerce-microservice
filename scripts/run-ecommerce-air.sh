@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="${1:$HOME/Desktop/ecommerce-microservices}"
+REPO_DIR="${1:-{$HOME:-$PWD}/Desktop/ecommerce-microservices}"
 SESSION="ecommerce"
 
 if ! command -v air >/dev/null 2>&1; then
