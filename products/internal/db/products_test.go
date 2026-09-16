@@ -22,7 +22,6 @@ func TestAddProduct(t *testing.T) {
 			Quantity: 4,
 		},
 	}
-	res, err := productModel.AddProduct(ctx, req)
+	_, err := productModel.AddProduct(ctx, req)
 	assert.NoError(t, err)
-	t.Log(res)
 }
