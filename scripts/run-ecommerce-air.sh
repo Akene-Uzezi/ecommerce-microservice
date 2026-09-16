@@ -28,7 +28,7 @@ tmux new-session -d -s "$SESSION" -n services "cd ${REPO_DIR}/${SERVICES[0]} && 
 
 for svc in "${SERVICES[@]:1}"; do
   tmux split-window -t "${SESSION}:services" "cd ${REPO_DIR}/${svc} && air"
-  tmux select-layout -t "{SESSION}:services" tiled
+  tmux select-layout -t "${SESSION}:services" tiled
 done
 
 echo "Attaching to tmux session '$SESSION'"
