@@ -26,7 +26,9 @@ func NewProductModel(db *pgxpool.Pool) *ProductModel {
 }
 
 func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*productspb.AddProductResponse, error) {
-	var createdProduct productspb.AddProductResponse
+	var createdName string
+	var createdPrice float64
+	var createdQuantity uint32
 	name := req.Product.Name
 	price := req.Product.Price
 	quantity := req.Product.Quantity
@@ -34,15 +36,21 @@ func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProduc
 		INSERT INTO products
 		(name, price, quantity)
 		VALUES ($1, $2, $3)
-		RETURNING id, name, price, quantity
+		RETURNING name, price, quantity
 	`
 	err := m.DB.QueryRow(ctx, query, name, price, quantity).Scan(
-		&createdProduct.Product.Name, &createdProduct.Product.Price, &createdProduct.Product.Quantity,
+		&createdName, &createdPrice, &createdQuantity,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query error %v", err)
 	}
-	return &createdProduct, nil
+	return &productspb.AddProductResponse{
+		Product: &productspb.Product{
+			Name:     createdName,
+			Price:    createdPrice,
+			Quantity: createdQuantity,
+		},
+	}, nil
 }
 
 func (m *ProductModel) GetProducts(ctx context.Context, req *productspb.GetProductsRequest) (*productspb.GetProductsResponse, error) {
