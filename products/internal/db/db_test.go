@@ -5,22 +5,16 @@ import (
 	"log"
 	"os"
 	"testing"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var (
-	testPool     *pgxpool.Pool
-	productModel *ProductModel
-)
+var productModel *ProductModel
 
 func TestMain(m *testing.M) {
 	pool, cleanup, err := shared.SetupTestDBSuite("/scripts/products_init.sql")
 	if err != nil {
 		log.Fatalf("failed to init test db %v", err)
 	}
-	testPool = pool
-	productModel = NewProductModel(testPool)
+	productModel = NewProductModel(pool)
 
 	exitcode := m.Run()
 	cleanup()
