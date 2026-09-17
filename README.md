@@ -304,6 +304,14 @@ cd orders && air
 cd gateway && air
 ```
 
+Or use the helper script to run everything in a tmux session:
+
+```bash
+./scripts/run-ecommerce-air.sh
+```
+
+This starts the databases via Docker Compose, then opens a tmux session with a pane for each runnable service (`auth`, `orders`, `products`, `gateway`). Detach with `Ctrl+B D` and reattach later with `tmux attach -t ecommerce`.
+
 ### 4. Run with Docker Compose
 
 ```bash
@@ -379,6 +387,7 @@ curl -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/api/v1/products
 | `scripts/commit.sh` | Stage all changes, prompt for a message, commit and push |
 | `scripts/logintodb.sh` | Prompt for container/user/db and open `psql` inside the container |
 | `scripts/reset.sh` | `docker compose down -v`, then optionally restart the stack |
+| `scripts/run-ecommerce-air.sh` | Start databases with Docker Compose, then launch all runnable services in a tmux session with `air` hot-reload |
 
 ### Workspace
 
