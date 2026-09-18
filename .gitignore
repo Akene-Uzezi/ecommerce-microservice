@@ -18,3 +18,7 @@ auth/.env
 # products folder
 products/tmp/
 products/.env
+
+# stock folder
+stock/tmp/
+stock/.env
