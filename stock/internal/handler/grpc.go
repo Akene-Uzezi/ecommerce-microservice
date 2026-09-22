@@ -1,7 +1,11 @@
 // Package handler for the stock service
 package handler
 
-import stockpb "ecommerce-api/gen/stock"
+import (
+	"context"
+
+	stockpb "ecommerce-api/gen/stock"
+)
 
 type StockGRPCHandler struct {
 	stockpb.UnimplementedStockServiceServer
@@ -9,4 +13,8 @@ type StockGRPCHandler struct {
 
 func NewStockGRPCHandler() *StockGRPCHandler {
 	return &StockGRPCHandler{}
+}
+
+func (p *StockGRPCHandler) CheckProductInStore(ctx context.Context, req *stockpb.CheckProductInStoreRequest) (*stockpb.CheckProductInStoreResponse, error) {
+	return nil, nil
 }
