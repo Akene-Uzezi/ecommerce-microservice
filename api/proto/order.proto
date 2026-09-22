@@ -25,7 +25,13 @@ message OrderResponse {
 
 message GetOrderRequest { string id = 1; }
 
+message CheckProductInStoreRequest { string productName = 1; }
+
+message CheckProductInStoreResponse { uint32 quantity = 1; }
+
 service OrderService {
   rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
   rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+  rpc CheckProductInStore(CheckProductInStoreRequest)
+      returns (CheckProductInStoreResponse);
 }
