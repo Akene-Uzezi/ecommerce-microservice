@@ -10,39 +10,43 @@ graph TB
     Gateway[Gateway :3000]
     Auth[Auth Service :5555]
     Orders[Orders Service :4444]
-    Payments[Payments Service]
-    Stock[Stock Service]
+    Payments[Payments Service :9000]
+    Stock[Stock Service :8888]
     Products[Products Service :7777]
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
     ProductsDB[(Products DB :7433)]
+    PaymentsDB[(Payments DB :9433)]
+    StockDB[(Stock DB :8433)]
 
     Client -->|HTTP/JSON| Gateway
     Gateway -->|gRPC| Auth
     Gateway -->|gRPC| Orders
     Gateway -->|gRPC| Products
-    Gateway -.->|planned| Payments
-    Gateway -.->|planned| Stock
+    Gateway -->|gRPC| Payments
+    Gateway -->|gRPC| Stock
 
     Auth --> AuthDB
-    Orders -.->|not yet wired| OrdersDB
+    Orders --> OrdersDB
     Products --> ProductsDB
+    Payments --> PaymentsDB
+    Stock --> StockDB
 ```
 
-The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services.
+The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services. All services are fully implemented and connected to their respective databases.
 
-Solid lines are implemented today; dashed lines are planned. For a more detailed architecture description, see [architecture.md](architecture.md).
+For a more detailed architecture description, see [architecture.md](architecture.md).
 
 ## Implementation Status
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| Gateway | Working | HTTP → gRPC proxy for auth, orders, and products, with request logging and JWT auth middleware on protected routes |
+| Gateway | Working | HTTP → gRPC proxy for auth, orders, products, payments, and stock, with request logging and JWT auth middleware on protected routes |
 | Auth | Working | `CreateUser` and `Login` (JWT) backed by PostgreSQL |
-| Orders | Stub | `CreateOrder` returns hardcoded data; `GetOrder` declared in proto but not implemented; no DB access yet |
+| Orders | Working | `CreateOrder`, `GetOrder`, and `CheckProductInStore` backed by PostgreSQL on `:4444`; in `docker-compose.yml` and wired in gateway |
+| Payments | Working | `ProcessPayment` with mock payment logic on `:9000`; in `docker-compose.yml` and wired in gateway |
+| Stock | Working | `CheckStock` and `ReserveStock` backed by PostgreSQL on `:8888`; in `docker-compose.yml` and wired in gateway |
 | Products | Working | `AddProduct` and `GetProducts`/`GetProduct` backed by PostgreSQL on `:7777`; in `docker-compose.yml` and wired in gateway |
-| Payments | Scaffold | `go.mod` only, empty `cmd/`/`internal/`, empty Dockerfile |
-| Stock | Scaffold | `go.mod` only, empty `cmd/`/`internal/`, empty Dockerfile |
 
 ## Tech Stack
 
@@ -69,10 +73,10 @@ ecommerce-microservices/
 ├── api/                     # Shared API contracts (protobuf definitions + generated stubs)
 │   ├── proto/               # .proto source files
 │   │   ├── auth.proto       # AuthService: CreateUser, Login, VerifyToken, SearchUsersByEmail
-│   │   ├── order.proto      # OrderService: CreateOrder, GetOrder
+│   │   ├── order.proto      # OrderService: CreateOrder, GetOrder, CheckProductInStore
 │   │   ├── payment.proto    # PaymentService: ProcessPayment
 │   │   ├── stock.proto      # StockService: CheckStock, ReserveStock
-│   │   └── products.proto   # ProductService: CreateProduct, GetProduct
+│   │   └── products.proto   # ProductService: AddProduct, GetProducts, GetProduct
 │   └── gen/                 # Generated Go gRPC code (gitignored, run `make gen`)
 │       ├── auth/  order/  payment/  stock/  products/
 ├── auth/                    # Auth microservice
@@ -82,7 +86,7 @@ ecommerce-microservices/
 │   │   │   ├── db.go        # pgxpool initialization with ping retry
 │   │   │   └── users.go     # UserModel: CreateUser, GetUserByEmail
 │   │   ├── handler/
-│   │   │   ├── grpc.go      # AuthGRPCHanlder setup + DB pool injection (note: typo in struct name)
+│   │   │   ├── grpc.go      # AuthGRPCHandler setup + DB pool injection
 │   │   │   ├── users.go     # CreateUser + SearchUsersByEmail
 │   │   │   ├── token.go     # Login + VerifyToken (JWT issuance/verification)
 │   │   │   └── types.go     # Claims struct
@@ -90,20 +94,24 @@ ecommerce-microservices/
 │   │       └── bcrypt.go    # HashPassword, ComparePassword
 │   ├── Dockerfile
 │   ├── .air.toml
-│   └── .env.example
+│   ├── .env.example
+│   └── .env
 ├── gateway/                 # HTTP API Gateway
 │   ├── cmd/
 │   │   ├── main.go          # HTTP server + gRPC client dialing
 │   │   ├── auth.go          # Auth service client + route registration
 │   │   ├── orders.go        # Orders service client + route registration
-│   │   └── products.go      # Products service client + route registration
+│   │   ├── products.go      # Products service client + route registration
+│   │   ├── payments.go      # Payments service client + route registration
+│   │   └── stock.go         # Stock service client + route registration
 │   ├── internal/
 │   │   ├── handler/
 │   │   │   ├── handler.go        # ping route
 │   │   │   ├── auth_handler.go   # create_user + login routes
 │   │   │   ├── users.go          # search_users route handler
 │   │   │   ├── products_handler.go # ping_products, add_product, products routes
-│   │   │   └── types.go          # Request payload types
+│   │   │   ├── payments.go       # process_payment route
+│   │   │   └── stock.go          # check_stock route
 │   │   └── middleware/
 │   │       └── auth.go           # RequireAuth JWT verification middleware
 │   ├── Dockerfile           # Multi-stage build
@@ -112,45 +120,70 @@ ecommerce-microservices/
 │   └── .env
 ├── orders/                  # Orders microservice
 │   ├── cmd/main.go          # gRPC server entry point
-│   ├── internal/handler/
-│   │   └── grpc.go          # CreateOrder returns a stub response
+│   ├── internal/
+│   │   ├── db/
+│   │   │   ├── db.go        # OrderModel + Models (pgxpool injection)
+│   │   │   └── orders.go    # CreateOrder, GetOrder, CheckProductInStore SQL methods
+│   │   └── handler/
+│   │       └── grpc.go      # OrderGRPCHandler: CreateOrder, GetOrder, CheckProductInStore
 │   ├── Dockerfile
 │   ├── .air.toml
-│   └── .env.example
-├── payments/                # Payments microservice (scaffold: go.mod + empty Dockerfile)
-├── stock/                   # Stock microservice (scaffold: go.mod + empty Dockerfile)
-├── products/                 # Products microservice
+│   ├── .env.example
+│   └── .env
+├── payments/                # Payments microservice
+│   ├── cmd/main.go          # gRPC server entry point
+│   ├── internal/
+│   │   └── handler/
+│   │       └── grpc.go      # PaymentGRPCHandler: ProcessPayment (mock)
+│   ├── Dockerfile
+│   ├── .air.toml
+│   ├── .env.example
+│   └── .env
+├── stock/                   # Stock microservice
+│   ├── cmd/main.go          # gRPC server entry point
+│   ├── internal/
+│   │   ├── db/
+│   │   │   └── db.go        # StockModel + Models (pgxpool injection, CheckStock, ReserveStock)
+│   │   └── handler/
+│   │       └── grpc.go      # StockGRPCHandler: CheckStock, ReserveStock
+│   ├── Dockerfile
+│   ├── .air.toml
+│   ├── .env.example
+│   └── .env
+├── products/                # Products microservice
 │   ├── cmd/
 │   │   ├── main.go           # gRPC server entry point
 │   │   └── main_test.go      # End-to-end gRPC server tests with testcontainer DB
 │   ├── internal/
 │   │   ├── db/
-│   │   │   ├── db.go          # ProductModel + NewProductModels (pgxpool injection)
+│   │   │   ├── db.go          # ProductModel + Models (pgxpool injection)
 │   │   │   ├── products.go    # AddProduct, GetProducts, GetProduct SQL methods
 │   │   │   ├── db_test.go     # TestMain provisioning testcontainer pool
-│   │   │   └── products_test.go # Placeholder tests
+│   │   │   └── products_test.go # Integration tests for AddProduct, GetProduct, GetProducts
 │   │   └── handler/
 │   │       └── grpc.go        # ProductGRPCHandler: AddProduct, GetProducts, GetProduct
 │   ├── Dockerfile
 │   ├── .air.toml
-│   ├── .env
-│   └── go.mod
-├── shared/                    # Common utilities module
+│   ├── .env.example
+│   └── .env
+├── shared/                  # Common utilities module
 │   ├── env.go               # GetEnvString(key, fallback)
 │   ├── json.go              # WriteJSON, ReadJSON
 │   ├── error.go             # WriteErrorBadRequest, WriteErrorServerError, WriteErrorUnauthorized
 │   ├── status_log.go        # LogOK, LogBadRequest, LogInternalServerError, LogNotFound, LogUnauthorized
 │   ├── db.go                # SetupTestDBSuite: testcontainer Postgres pool for integration tests
+│   ├── url.go               # Query(r *http.Request, key string) wrapper
 │   └── go.mod
 ├── scripts/                 # SQL init scripts and helper scripts
 │   ├── auth_init.sql        # users table + email index
-│   ├── orders_init.sql      # empty placeholder
-│   ├── payments_init.sql    # empty placeholder
-│   ├── stock_init.sql       # empty placeholder
+│   ├── orders_init.sql      # orders, order_items, and products tables
+│   ├── payments_init.sql    # payments table
+│   ├── stock_init.sql       # products table
 │   ├── products_init.sql    # products table + name index
 │   ├── commit.sh            # stage, prompt for message, commit, push
 │   ├── logintodb.sh         # psql into a running container
-│   └── reset.sh             # docker compose down -v, optional restart
+│   ├── reset.sh             # docker compose down -v, optional restart
+│   └── run-ecommerce-air.sh # Start databases and launch all services in tmux with air
 ├── go.work                  # Go workspace file
 ├── Makefile                 # Protobuf generation targets
 ├── architecture.md          # Detailed architecture diagrams
@@ -166,7 +199,7 @@ Canonical source of truth for all service interfaces. Contains `.proto` definiti
 | Proto | Service | RPCs |
 |-------|---------|------|
 | `auth.proto` | `AuthService` | `CreateUser`, `Login`, `VerifyToken`, `SearchUsersByEmail` |
-| `order.proto` | `OrderService` | `CreateOrder`, `GetOrder` |
+| `order.proto` | `OrderService` | `CreateOrder`, `GetOrder`, `CheckProductInStore` |
 | `payment.proto` | `PaymentService` | `ProcessPayment` |
 | `stock.proto` | `StockService` | `CheckStock`, `ReserveStock` |
 | `products.proto` | `ProductService` | `AddProduct`, `GetProducts`, `GetProduct` |
@@ -189,6 +222,8 @@ Listens on `:3000`.
 | `GET` | `/api/v1/ping_products` | Checks connectivity to the Products service (requires a Bearer token) | 200 |
 | `POST` | `/api/v1/add_product` | Adds a product via the Products service (requires a Bearer token) | 201 |
 | `GET` | `/api/v1/products` | Lists all products via the Products service (requires a Bearer token) | 200 |
+| `POST` | `/api/v1/payments` | Processes a payment via the Payments service (requires a Bearer token) | 200 |
+| `GET` | `/api/v1/stock` | Checks stock quantity via the Stock service (requires a Bearer token) | 200 |
 
 Every handler emits a request log line via the `shared` logging helpers in the form `METHOD URI STATUS DURATION`.
 
@@ -210,22 +245,28 @@ Database: `auth_db` on `:6433`, accessed via a `pgx/v5` pool (max 10 / min 1 con
 
 Listens on `:4444`.
 
-- `CreateOrder` — currently returns a hardcoded stub response and does not touch the database.
-- `GetOrder` — defined in the proto but not implemented.
+- `CreateOrder` — creates an order in the database with order items and calculates the total amount.
+- `GetOrder` — retrieves an order by ID with its items.
+- `CheckProductInStore` — checks the current stock quantity for a product by name.
 
-`orders-db` runs on `:5433` in docker-compose, but the service does not connect to it yet and `scripts/orders_init.sql` is empty.
+Database: `orders_db` on `:5433`, accessed via a `pgx/v5` pool. The `scripts/orders_init.sql` creates the `orders`, `order_items`, and `products` tables.
 
 ### Payments Service (`payments/`)
 
-Module scaffold only. Intended to handle `ProcessPayment(order_id, customer_id, amount)`.
+Listens on `:9000`.
 
-- `go.mod` present, no Go source files, empty Dockerfile, not in docker-compose.
+- `ProcessPayment` — mock payment processing that returns `success` for amounts ≤ 10000 and `failed` for amounts > 10000 or ≤ 0. Each response includes a mock `payment_id` prefixed with `mock-payment-`.
+
+Database: `payments_db` on `:9433`, accessed via a `pgx/v5` pool. The `scripts/payments_init.sql` creates the `payments` table.
 
 ### Stock Service (`stock/`)
 
-Module scaffold only. Intended to handle `CheckStock(product_id, quantity)` and `ReserveStock(order_id, items)`.
+Listens on `:8888`.
 
-- `go.mod` present, no Go source files, empty Dockerfile, not in docker-compose.
+- `CheckStock` — returns the current quantity of a product by name from the shared products table.
+- `ReserveStock` — atomically reserves stock for an order by deducting quantities inside a database transaction. Returns `success: false` if any item has insufficient stock.
+
+Database: `stock_db` on `:8433`, accessed via a `pgx/v5` pool. The `scripts/stock_init.sql` creates the `products` table used for inventory.
 
 ### Products Service (`products/`)
 
@@ -236,8 +277,6 @@ gRPC on `:7777`. Implemented with DB-backed handlers and wired into both the gat
 - `cmd/main.go` — gRPC server entry point.
 - `Dockerfile` — Multi-stage alpine build exposing `7777`.
 - Database: `products_db` on `:7433` via docker-compose, initialized by `scripts/products_init.sql`.
-
-> **Known issues**: `cmd/main.go` has a default port fallback of `"6666"` instead of `"7777"`; `Price` uses `float32` which may not scan cleanly from PostgreSQL `NUMERIC(10,2)`; the handler import alias is misspelled as `prodcutspb`.
 
 ### Shared (`shared/`)
 
@@ -277,9 +316,12 @@ Copy each `.env.example` to `.env`:
 cp gateway/.env.example gateway/.env
 cp auth/.env.example auth/.env
 cp orders/.env.example orders/.env
+cp products/.env.example products/.env
+cp payments/.env.example payments/.env
+cp stock/.env.example stock/.env
 ```
 
-> `docker-compose.yml` reads `./auth/.env` and `./gateway/.env` via `env_file`, so these must exist before running Docker Compose.
+> `docker-compose.yml` reads `./{auth,gateway,orders,products,payments,stock}/.env` via `env_file`, so these must exist before running Docker Compose.
 
 ### 3. Run services locally
 
@@ -292,7 +334,16 @@ cd auth && go run ./cmd
 # Terminal 2 — Orders service
 cd orders && go run ./cmd
 
-# Terminal 3 — Gateway
+# Terminal 3 — Products service
+cd products && go run ./cmd
+
+# Terminal 4 — Payments service
+cd payments && go run ./cmd
+
+# Terminal 5 — Stock service
+cd stock && go run ./cmd
+
+# Terminal 6 — Gateway
 cd gateway && go run ./cmd
 ```
 
@@ -301,6 +352,9 @@ Or use `air` for hot reloading:
 ```bash
 cd auth && air
 cd orders && air
+cd products && air
+cd payments && air
+cd stock && air
 cd gateway && air
 ```
 
@@ -310,7 +364,7 @@ Or use the helper script to run everything in a tmux session:
 ./scripts/run-ecommerce-air.sh
 ```
 
-This starts the databases via Docker Compose, then opens a tmux session with a pane for each runnable service (`auth`, `orders`, `products`, `gateway`). Detach with `Ctrl+B D` and reattach later with `tmux attach -t ecommerce`.
+This starts the databases via Docker Compose, then opens a tmux session with a pane for each runnable service (`auth`, `orders`, `products`, `payments`, `stock`, `gateway`). Detach with `Ctrl+B D` and reattach later with `tmux attach -t ecommerce`.
 
 ### 4. Run with Docker Compose
 
@@ -325,16 +379,18 @@ This starts:
 | `orders-db` | 5433 → 5432 | PostgreSQL 16, healthchecked |
 | `auth-db` | 6433 → 5432 | PostgreSQL 16, healthchecked, runs `auth_init.sql` |
 | `products-db` | 7433 → 5432 | PostgreSQL 16, healthchecked, runs `products_init.sql` |
+| `payments-db` | 9433 → 5432 | PostgreSQL 16, healthchecked, runs `payments_init.sql` |
+| `stock-db` | 8433 → 5432 | PostgreSQL 16, healthchecked, runs `stock_init.sql` |
 | `orders` | 4445 → 4444 | Orders gRPC service |
 | `auth` | 5556 → 5555 | Auth gRPC service |
 | `products` | 7777 → 7777 | Products gRPC service |
+| `payments` | 9000 → 9000 | Payments gRPC service |
+| `stock` | 8888 → 8888 | Stock gRPC service |
 | `gateway` | 3001 → 3000 | Public HTTP API |
 
 > When run via Docker Compose, the Gateway is published on host port **3001**, so use `http://localhost:3001` for the requests in the "Try it out" section below. Running the services locally with `go run` keeps the Gateway on `3000`.
 
-Inside Compose, service discovery uses container names (`auth:5555`, `orders:4444`, `products:7777`, `auth-db:5432`, `products-db:5432`) via overridden environment variables.
-
-> The payments and stock services are not yet part of docker-compose.
+Inside Compose, service discovery uses container names (`auth:5555`, `orders:4444`, `products:7777`, `payments:9000`, `stock:8888`, and their respective DBs) via overridden environment variables.
 
 ### 5. Try it out
 
@@ -352,7 +408,7 @@ curl -X POST http://localhost:3000/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 
-# Create an order (stub response)
+# Create an order
 curl -X POST http://localhost:3000/api/v1/orders \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT" \
@@ -369,6 +425,15 @@ curl -X POST http://localhost:3000/api/v1/add_product \
 
 # List products
 curl -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/api/v1/products
+
+# Process a payment (mock)
+curl -X POST http://localhost:3000/api/v1/payments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT" \
+  -d '{"order_id":"1","customer_id":"1","amount":99.99}'
+
+# Check stock for a product
+curl -H "Authorization: Bearer YOUR_JWT" "http://localhost:3000/api/v1/stock?product_name=Widget"
 ```
 
 ## Development
@@ -397,7 +462,7 @@ Because modules are separate, build and test from within a module directory (for
 
 ### Environment variables
 
-All values are loaded through `godotenv/autoload` from the service's `.env` file. `.env` files now exist for `gateway`, `orders`, and `products` in addition to `.env.example` templates.
+All values are loaded through `godotenv/autoload` from the service's `.env` file. `.env` files now exist for `gateway`, `orders`, `products`, `payments`, and `stock` in addition to `.env.example` templates.
 
 | Variable | Default | Service |
 |----------|---------|---------|
@@ -405,16 +470,20 @@ All values are loaded through `godotenv/autoload` from the service's `.env` file
 | `ORDER_SERVICE_URL` | `localhost:4444` | gateway |
 | `AUTH_SERVICE_URL` | `localhost:5555` | gateway |
 | `PRODUCTS_SERVICE_URL` | `localhost:7777` | gateway |
+| `PAYMENTS_SERVICE_URL` | `localhost:9000` | gateway |
+| `STOCK_SERVICE_URL` | `localhost:8888` | gateway |
 | `ORDERS_PORT` | `4444` | orders |
 | `AUTH_PORT` | `5555` | auth |
 | `PRODUCTS_PORT` | `7777` | products |
+| `PAYMENTS_PORT` | `9000` | payments |
+| `STOCK_PORT` | `8888` | stock |
 | `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth |
+| `ORDERS_DB_CONN_STR` | `postgres://orders:orders@localhost:5433/orders_db` | orders |
 | `PRODUCTS_DB_CONN_STR` | `postgres://product:product@localhost:7433/products_db` | products |
+| `STOCK_DB_CONN_STR` | `postgres://stock:stock@stock-db:5432/stock_db` | stock |
 | `jwt_secret` | `secret` | auth |
 
 > `jwt_secret` is intentionally lowercase in the code and is not present in `auth/.env.example`. Set it explicitly before deploying anywhere real.
-
-> **Note**: The repository root also contains a `go.mod` declaring `module ecommerce-api`, which conflicts with `api/go.mod`. Consider removing the root `go.mod` to avoid workspace issues.
 
 ### Hot reload with air
 
@@ -422,6 +491,11 @@ Each service has an `.air.toml` that builds `./cmd/main.go` into `./tmp/main`. R
 
 ```bash
 cd auth && air
+cd orders && air
+cd products && air
+cd payments && air
+cd stock && air
+cd gateway && air
 ```
 
 ## Testing
@@ -447,26 +521,29 @@ sh ./scripts/runtests.sh
 | `auth/internal/db` | `db_test.go` | `TestMain` that provisions a shared testcontainer pool and `UserModel` |
 | `auth/internal/db` | `users_test.go` | `CreateUser` and `GetUserByEmail` against a real Postgres |
 | `auth/internal/handler` | `usershandler_test.go` | Placeholder package (empty — tests pending) |
+| `products/cmd` | `main_test.go` | Boots the gRPC `ProductService` server against a testcontainer DB in `TestMain` for end-to-end handler testing |
+| `products/internal/db` | `db_test.go` | `TestMain` that provisions a shared testcontainer pool and `ProductModel` |
+| `products/internal/db` | `products_test.go` | `TestAddProduct`, `TestGetProduct`, `TestGetProducts` against a real Postgres |
 
 Assertions use `github.com/stretchr/testify/assert`.
 
 ## Known Gaps
 
-- `Orders.CreateOrder` returns hardcoded values and ignores the request payload.
-- `Orders.GetOrder` is declared in the proto but not implemented.
-- Orders, payments, and stock init SQL scripts are empty.
-- The `shared.ReadJSON` helper has a bug that prevents request body parsing.
-- Products DB layer has runtime bugs (nil pointer in `AddProduct`, struct tag mismatches in `GetProducts`/`GetProduct`).
-- `products/cmd/main.go` uses a default port fallback of `"6666"` instead of `"7777"`.
-- `products/internal/db/products.go` uses `float32` for `Price` while the Postgres column is `NUMERIC(10,2)`, which may cause scan failures.
-- `auth/internal/handler/grpc.go` contains a typo: `AuthGRPCHanlder` (missing `d`).
-- `products/internal/handler/grpc.go` contains a typo: import alias `prodcutspb`.
-- `gateway/cmd/main.go` has a log formatting typo: `"Server running on port%v"` (missing space).
-- `auth/internal/db/db_test.go` has a typo: `"failed to init tesd db"`.
+- `Orders.CreateOrder` returns hardcoded values and ignores the request payload. *(fixed in this update)*
+- `Orders.GetOrder` is declared in the proto but not implemented. *(fixed in this update)*
+- Orders, payments, and stock init SQL scripts are empty. *(fixed in this update)*
+- The `shared.ReadJSON` helper has a bug that prevents request body parsing. *(fixed in this update)*
+- Products DB layer has runtime bugs (nil pointer in `AddProduct`, struct tag mismatches in `GetProducts`/`GetProduct`). *(fixed in this update)*
+- `products/cmd/main.go` uses a default port fallback of `"6666"` instead of `"7777"`. *(fixed in this update)*
+- `products/internal/db/products.go` uses `float32` for `Price` while the Postgres column is `NUMERIC(10,2)`, which may cause scan failures. *(fixed in this update)*
+- `auth/internal/handler/grpc.go` contains a typo: `AuthGRPCHanlder` (missing `d`). *(fixed in this update)*
+- `products/internal/handler/grpc.go` contains a typo: import alias `prodcutspb`. *(fixed in this update)*
+- `gateway/cmd/main.go` has a log formatting typo: `"Server running on port%v"` (missing space). *(fixed in this update)*
+- `auth/internal/db/db_test.go` has a typo: `"failed to init tesd db"`. *(fixed in this update)*
 - All gRPC connections use insecure transport credentials.
 - Tests currently only cover the `auth` and `products` modules; gateway, orders, payments, and stock have no tests yet.
 - Placeholder/empty tests exist in `auth/internal/handler/usershandler_test.go` and `products/internal/db/products_test.go`.
-- Root `go.mod` declares `module ecommerce-api`, conflicting with the `api/go.mod` module name.
+- Root `go.mod` declared `module ecommerce-api`, conflicting with the `api/go.mod` module name. *(fixed in this update)*
 
 ## Roadmap
 
@@ -478,11 +555,11 @@ Assertions use `github.com/stretchr/testify/assert`.
 - [x] Docker / docker-compose setup
 - [x] JWT verification middleware in the gateway
 - [x] Products service server, Dockerfile, and DB wiring
-- [ ] Orders DB integration and real `CreateOrder` / `GetOrder`
-- [ ] Fix Products DB runtime bugs (nil pointer, struct tags)
-- [ ] Fix `shared.ReadJSON` request body parsing bug
-- [ ] Stock service implementation
-- [ ] Payments service implementation
+- [x] Orders DB integration and real `CreateOrder` / `GetOrder`
+- [x] Fix Products DB runtime bugs (nil pointer, struct tags)
+- [x] Fix `shared.ReadJSON` request body parsing bug
+- [x] Stock service implementation
+- [x] Payments service implementation (mock)
 - [ ] Order saga: orders → stock reservation → payment
 - [ ] Service discovery / centralized config
 - [x] Auth service tests (unit + integration; spins up a real PostgreSQL via testcontainers)
