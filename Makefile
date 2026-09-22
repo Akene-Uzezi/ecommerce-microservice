@@ -9,11 +9,6 @@ gen:
 		order.proto
 
 	@protoc -I=api/proto \
-		--go_out=api/gen/stock --go_opt=paths=source_relative \
-		--go-grpc_out=api/gen/stock --go-grpc_opt=paths=source_relative \
-		stock.proto
-
-	@protoc -I=api/proto \
 		--go_out=api/gen/payment --go_opt=paths=source_relative \
 		--go-grpc_out=api/gen/payment --go-grpc_opt=paths=source_relative \
 		payment.proto
