@@ -23,8 +23,12 @@ services:
     depends_on:
       orders-db:
         condition: service_healthy
+    environment:
+      - ORDERS_DB_CONN_STR=postgres://orders:orders@orders-db:5432/orders_db
     ports:
       - "4445:4444"
+    env_file:
+      - ./orders/.env
 
   auth-db:
     image: postgres:16-alpine
@@ -60,6 +64,40 @@ services:
       timeout: 5s
       retries: 5
 
+  payments-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: payments
+      POSTGRES_PASSWORD: payments
+      POSTGRES_DB: payments_db
+    ports:
+      - "9433:5432"
+    volumes:
+      - payments_data:/var/lib/postgresql/data
+      - ./scripts/payments_init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments -d payments_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  stock-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: stock
+      POSTGRES_PASSWORD: stock
+      POSTGRES_DB: stock_db
+    ports:
+      - "8433:5432"
+    volumes:
+      - stock_data:/var/lib/postgresql/data
+      - ./scripts/stock_init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock -d stock_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   products:
     build:
       context: .
@@ -88,6 +126,32 @@ services:
     env_file:
       - ./auth/.env
 
+  payments:
+    build:
+      context: .
+      dockerfile: payments/Dockerfile
+    depends_on:
+      payments-db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    env_file:
+      - ./payments/.env
+
+  stock:
+    build:
+      context: .
+      dockerfile: stock/Dockerfile
+    depends_on:
+      stock-db:
+        condition: service_healthy
+    environment:
+      - STOCK_DB_CONN_STR=postgres://stock:stock@stock-db:5432/stock_db
+    ports:
+      - "8888:8888"
+    env_file:
+      - ./stock/.env
+
   gateway:
     build:
       context: .
@@ -95,10 +159,15 @@ services:
     depends_on:
       - auth
       - orders
+      - products
+      - payments
+      - stock
     environment:
       - AUTH_SERVICE_URL=auth:5555
       - ORDER_SERVICE_URL=orders:4444
       - PRODUCTS_SERVICE_URL=products:7777
+      - PAYMENTS_SERVICE_URL=payments:9000
+      - STOCK_SERVICE_URL=stock:8888
     ports:
       - "3001:3000"
     env_file:
@@ -108,3 +177,5 @@ volumes:
   orders_data:
   auth_data:
   products_data:
+  payments_data:
+  stock_data:

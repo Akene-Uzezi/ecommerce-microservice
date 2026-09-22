@@ -12,13 +12,13 @@ import (
 
 var jwtSecret = shared.GetEnvString("jwt_secret", "secret")
 
-type AuthGRPCHanlder struct {
+type AuthGRPCHandler struct {
 	authpb.UnimplementedAuthServiceServer
 	models *db.Models
 }
 
-func NewAuthGRPCHandler(models *db.Models) *AuthGRPCHanlder {
-	return &AuthGRPCHanlder{
+func NewAuthGRPCHandler(models *db.Models) *AuthGRPCHandler {
+	return &AuthGRPCHandler{
 		models: models,
 	}
 }

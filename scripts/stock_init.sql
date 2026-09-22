@@ -1,0 +1,8 @@
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+  quantity INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_products_name ON products(name);

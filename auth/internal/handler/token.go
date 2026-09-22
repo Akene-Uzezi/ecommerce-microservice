@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (h *AuthGRPCHanlder) VerifyToken(ctx context.Context, req *authpb.VerifyTokenRequest) (*authpb.VerifyTokenResponse, error) {
+func (h *AuthGRPCHandler) VerifyToken(ctx context.Context, req *authpb.VerifyTokenRequest) (*authpb.VerifyTokenResponse, error) {
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(req.Token, claims, func(token *jwt.Token) (any, error) {

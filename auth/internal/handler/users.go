@@ -13,7 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.CreateUserResponse, error) {
+func (h *AuthGRPCHandler) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.CreateUserResponse, error) {
 	hashPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %s", err)
@@ -34,7 +34,7 @@ func (h *AuthGRPCHanlder) CreateUser(ctx context.Context, req *authpb.CreateUser
 	return response, nil
 }
 
-func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.LoginResponse, error) {
+func (h *AuthGRPCHandler) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.LoginResponse, error) {
 	user := &db.User{
 		Email:    req.Email,
 		Password: req.Password,
@@ -69,7 +69,7 @@ func (h *AuthGRPCHanlder) Login(ctx context.Context, req *authpb.LoginRequest) (
 	}, nil
 }
 
-func (h *AuthGRPCHanlder) SearchUsersByEmail(ctx context.Context, req *authpb.SearchUserByEmailRequest) (*authpb.SearchUserByEmailResponse, error) {
+func (h *AuthGRPCHandler) SearchUsersByEmail(ctx context.Context, req *authpb.SearchUserByEmailRequest) (*authpb.SearchUserByEmailResponse, error) {
 	user := &db.User{
 		Email: req.Email,
 	}

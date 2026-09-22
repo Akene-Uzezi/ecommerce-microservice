@@ -23,10 +23,10 @@ COPY ./shared/ ./shared
 COPY ./stock/ ./stock
 COPY ./products ./products
 
-WORKDIR /workspace/payments
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/payments ./cmd
+WORKDIR /workspace/stock
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/stock ./cmd
 
 FROM alpine:latest
-COPY --from=builder /bin/payments /bin/payments
-EXPOSE 9000
-ENTRYPOINT [ "/bin/payments" ]
+COPY --from=builder /bin/stock /bin/stock
+EXPOSE 8888
+ENTRYPOINT [ "/bin/stock" ]

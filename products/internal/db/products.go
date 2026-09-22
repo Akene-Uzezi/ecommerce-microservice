@@ -17,7 +17,7 @@ type ProductModel struct {
 type Product struct {
 	ID       int
 	Name     string
-	Price    float32
+	Price    float64
 	Quantity int
 }
 
@@ -26,6 +26,9 @@ func NewProductModel(db *pgxpool.Pool) *ProductModel {
 }
 
 func (m *ProductModel) AddProduct(ctx context.Context, req *productspb.AddProductRequest) (*productspb.AddProductResponse, error) {
+	if req.Product == nil {
+		return nil, fmt.Errorf("product is required")
+	}
 	var createdName string
 	var createdPrice float64
 	var createdQuantity uint32

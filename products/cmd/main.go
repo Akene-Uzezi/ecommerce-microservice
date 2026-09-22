@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var productsPort = shared.GetEnvString("PRODUCTS_PORT", "6666")
+var productsPort = shared.GetEnvString("PRODUCTS_PORT", "7777")
 
 func main() {
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", productsPort))
@@ -25,7 +25,7 @@ func main() {
 	productsDBConnStr := shared.GetEnvString("PRODUCTS_DB_CONN_STR", "postgres://product:product@localhost:7433/products_db")
 	pool, err := shared.InitPool(productsDBConnStr)
 	if err != nil {
-		log.Fatalf("failed to init producs db pool: %s", err)
+		log.Fatalf("failed to init products db pool: %s", err)
 	}
 	models := db.NewModels(pool)
 	productsHandler := handler.NewProductGRPCHandler(models)

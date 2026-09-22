@@ -17,7 +17,7 @@ var (
 func TestMain(m *testing.M) {
 	pool, cleanup, err := shared.SetupTestDBSuite("/scripts/auth_init.sql")
 	if err != nil {
-		log.Fatalf("failed to init tesd db: %s", err)
+		log.Fatalf("failed to init test db: %s", err)
 	}
 	testPool = pool
 	userModel = NewUserModel(testPool)

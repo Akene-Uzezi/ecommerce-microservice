@@ -10,7 +10,7 @@ if ! command -v air >/dev/null 2>&1; then
   exit 1
 fi
 
-for svc in auth gateway orders products; do
+for svc in auth gateway orders products payments stock; do
   if [ -f "$svc/.env.example" ] && [ ! -f "$svc/.env" ]; then
     cp "$svc/.env.example" "$svc/.env"
     echo "Created $svc/.env from .env.example"
@@ -18,9 +18,9 @@ for svc in auth gateway orders products; do
 done
 
 echo "Starting databases..."
-docker compose up -d auth-db orders-db products-db
+docker compose up -d auth-db orders-db products-db payments-db stock-db
 
-SERVICES=(auth orders products gateway)
+SERVICES=(auth orders products payments stock gateway)
 
 tmux kill-session -t "$SESSION" 2>/dev/null || true
 

@@ -8,4 +8,5 @@ use (
 	./payments
 	./products
 	./shared
+	./stock
 )
