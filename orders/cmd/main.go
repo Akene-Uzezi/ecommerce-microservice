@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("Failed to listen on port %s: %v", ordersPort, err)
 	}
 	grpcServer := grpc.NewServer()
-	ordersDBConnStr := shared.GetEnvString("ORDERS_DB_CONN_STR", "postgres://orders:orders@orders-db:5432/orders_db")
+	ordersDBConnStr := shared.GetEnvString("ORDERS_DB_CONN_STR", "postgres://orders:orders@localhost:5433/orders_db")
 	pool, err := shared.InitPool(ordersDBConnStr)
 	if err != nil {
 		log.Fatalf("failed to init orders db pool: %s", err)

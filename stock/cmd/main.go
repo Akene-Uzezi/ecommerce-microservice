@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("error creating stock service listener: %s on port: %s", err, stockPort)
 	}
 	grpcServer := grpc.NewServer()
-	stockDBConnStr := shared.GetEnvString("STOCK_DB_CONN_STR", "postgres://stock:stock@stock-db:5432/stock_db")
+	stockDBConnStr := shared.GetEnvString("STOCK_DB_CONN_STR", "postgres://stock:stock@localhost:8433/stock_db")
 	pool, err := shared.InitPool(stockDBConnStr)
 	if err != nil {
 		log.Fatalf("failed to init stock db pool: %s", err)
