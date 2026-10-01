@@ -1,0 +1,261 @@
+# --- auth-db ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: auth-db-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: auth-db }
+  template:
+    metadata:
+      labels: { app: auth-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: "auth" }
+            - { name: POSTGRES_PASSWORD, value: "auth" }
+            - { name: POSTGRES_DB, value: "auth_db" }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init-sql, mountPath: /docker-entrypoint-initdb.d }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "auth", "-d", "auth_db"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: auth-db-pvc } }
+        - { name: init-sql, configMap: { name: auth-init-sql } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-db
+spec:
+  selector: { app: auth-db }
+  ports:
+    - { port: 5432, targetPort: 5432 }
+---
+# --- orders-db ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: orders-db-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: orders-db }
+  template:
+    metadata:
+      labels: { app: orders-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: "orders" }
+            - { name: POSTGRES_PASSWORD, value: "orders" }
+            - { name: POSTGRES_DB, value: "orders_db" }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init-sql, mountPath: /docker-entrypoint-initdb.d }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "orders", "-d", "orders_db"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: orders-db-pvc } }
+        - { name: init-sql, configMap: { name: orders-init-sql } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-db
+spec:
+  selector: { app: orders-db }
+  ports:
+    - { port: 5432, targetPort: 5432 }
+---
+# --- products-db ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: products-db-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: products-db }
+  template:
+    metadata:
+      labels: { app: products-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: "product" }
+            - { name: POSTGRES_PASSWORD, value: "product" }
+            - { name: POSTGRES_DB, value: "products_db" }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init-sql, mountPath: /docker-entrypoint-initdb.d }
+          readinessProbe:
+            exec:
+              { command: ["pg_isready", "-U", "product", "-d", "products_db"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: products-db-pvc } }
+        - { name: init-sql, configMap: { name: products-init-sql } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-db
+spec:
+  selector: { app: products-db }
+  ports:
+    - { port: 5432, targetPort: 5432 }
+---
+# --- payments-db ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: payments-db-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: payments-db }
+  template:
+    metadata:
+      labels: { app: payments-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: "payments" }
+            - { name: POSTGRES_PASSWORD, value: "payments" }
+            - { name: POSTGRES_DB, value: "payments_db" }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init-sql, mountPath: /docker-entrypoint-initdb.d }
+          readinessProbe:
+            exec:
+              { command: ["pg_isready", "-U", "payments", "-d", "payments_db"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: payments-db-pvc } }
+        - { name: init-sql, configMap: { name: payments-init-sql } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-db
+spec:
+  selector: { app: payments-db }
+  ports:
+    - { port: 5432, targetPort: 5432 }
+---
+# --- stock-db ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stock-db-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: stock-db }
+  template:
+    metadata:
+      labels: { app: stock-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: "stock" }
+            - { name: POSTGRES_PASSWORD, value: "stock" }
+            - { name: POSTGRES_DB, value: "stock_db" }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init-sql, mountPath: /docker-entrypoint-initdb.d }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "stock", "-d", "stock_db"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: stock-db-pvc } }
+        - { name: init-sql, configMap: { name: stock-init-sql } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-db
+spec:
+  selector: { app: stock-db }
+  ports:
+    - { port: 5432, targetPort: 5432 }

@@ -1,0 +1,198 @@
+# --- auth ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: auth }
+  template:
+    metadata:
+      labels: { app: auth }
+    spec:
+      containers:
+        - name: auth
+          image: auth
+          env:
+            - {
+                name: AUTH_DB_CONN_STR,
+                value: "postgres://auth:auth@auth-db:5432/auth_db",
+              }
+          ports:
+            - containerPort: 5555
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+spec:
+  selector: { app: auth }
+  ports:
+    - { port: 5555, targetPort: 5555 }
+---
+# --- orders ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: orders }
+  template:
+    metadata:
+      labels: { app: orders }
+    spec:
+      containers:
+        - name: orders
+          image: orders
+          env:
+            - {
+                name: ORDERS_DB_CONN_STR,
+                value: "postgres://orders:orders@orders-db:5432/orders_db",
+              }
+          ports:
+            - containerPort: 4444
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+spec:
+  selector: { app: orders }
+  ports:
+    - { port: 4444, targetPort: 4444 }
+---
+# --- products ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: products }
+  template:
+    metadata:
+      labels: { app: products }
+    spec:
+      containers:
+        - name: products
+          image: products
+          env:
+            - {
+                name: PRODUCTS_DB_CONN_STR,
+                value: "postgres://product:product@products-db:5432/products_db",
+              }
+          ports:
+            - containerPort: 7777
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: products
+spec:
+  selector: { app: products }
+  ports:
+    - { port: 7777, targetPort: 7777 }
+---
+# --- payments ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: payments }
+  template:
+    metadata:
+      labels: { app: payments }
+    spec:
+      containers:
+        - name: payments
+          image: payments
+          env:
+            - {
+                name: PAYMENTS_DB_CONN_STR,
+                value: "postgres://payments:payments@payments-db:5432/payments_db",
+              }
+          ports:
+            - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments
+spec:
+  selector: { app: payments }
+  ports:
+    - { port: 9000, targetPort: 9000 }
+---
+# --- stock ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: stock }
+  template:
+    metadata:
+      labels: { app: stock }
+    spec:
+      containers:
+        - name: stock
+          image: stock
+          env:
+            - {
+                name: STOCK_DB_CONN_STR,
+                value: "postgres://stock:stock@stock-db:5432/stock_db",
+              }
+          ports:
+            - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock
+spec:
+  selector: { app: stock }
+  ports:
+    - { port: 8888, targetPort: 8888 }
+---
+# --- gateway ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: gateway }
+  template:
+    metadata:
+      labels: { app: gateway }
+    spec:
+      containers:
+        - name: gateway
+          image: gateway
+          env:
+            - { name: AUTH_SERVICE_URL, value: "auth:5555" }
+            - { name: ORDER_SERVICE_URL, value: "orders:4444" }
+            - { name: PRODUCTS_SERVICE_URL, value: "products:7777" }
+            - { name: PAYMENTS_SERVICE_URL, value: "payments:9000" }
+            - { name: STOCK_SERVICE_URL, value: "stock:8888" }
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+spec:
+  selector: { app: gateway }
+  ports:
+    - { port: 3000, targetPort: 3000 }
