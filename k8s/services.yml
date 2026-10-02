@@ -11,6 +11,7 @@ spec:
     metadata:
       labels: { app: auth }
     spec:
+      enableServiceLinks: false
       containers:
         - name: auth
           image: auth
@@ -45,6 +46,7 @@ spec:
     metadata:
       labels: { app: orders }
     spec:
+      enableServiceLinks: false
       containers:
         - name: orders
           image: orders
@@ -79,6 +81,7 @@ spec:
     metadata:
       labels: { app: products }
     spec:
+      enableServiceLinks: false
       containers:
         - name: products
           image: products
@@ -113,6 +116,7 @@ spec:
     metadata:
       labels: { app: payments }
     spec:
+      enableServiceLinks: false
       containers:
         - name: payments
           image: payments
@@ -147,6 +151,7 @@ spec:
     metadata:
       labels: { app: stock }
     spec:
+      enableServiceLinks: false
       containers:
         - name: stock
           image: stock
@@ -181,6 +186,7 @@ spec:
     metadata:
       labels: { app: gateway }
     spec:
+      enableServiceLinks: false
       containers:
         - name: gateway
           image: gateway
