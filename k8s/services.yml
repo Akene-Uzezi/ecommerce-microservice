@@ -14,6 +14,7 @@ spec:
       containers:
         - name: auth
           image: auth
+          imagePullPolicy: Never
           env:
             - {
                 name: AUTH_DB_CONN_STR,
@@ -47,6 +48,7 @@ spec:
       containers:
         - name: orders
           image: orders
+          imagePullPolicy: Never
           env:
             - {
                 name: ORDERS_DB_CONN_STR,
@@ -80,6 +82,7 @@ spec:
       containers:
         - name: products
           image: products
+          imagePullPolicy: Never
           env:
             - {
                 name: PRODUCTS_DB_CONN_STR,
@@ -113,6 +116,7 @@ spec:
       containers:
         - name: payments
           image: payments
+          imagePullPolicy: Never
           env:
             - {
                 name: PAYMENTS_DB_CONN_STR,
@@ -146,6 +150,7 @@ spec:
       containers:
         - name: stock
           image: stock
+          imagePullPolicy: Never
           env:
             - {
                 name: STOCK_DB_CONN_STR,
@@ -179,6 +184,7 @@ spec:
       containers:
         - name: gateway
           image: gateway
+          imagePullPolicy: Never
           env:
             - { name: AUTH_SERVICE_URL, value: "auth:5555" }
             - { name: ORDER_SERVICE_URL, value: "orders:4444" }
