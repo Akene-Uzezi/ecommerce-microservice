@@ -53,7 +53,7 @@ export default function () {
     }
   }
 
-  const productRes = http.get(`${BASE_URL}/products`, authHeaders, { tags: { name: 'getproduct' } });
+  const productRes = http.get(`${BASE_URL}/products`, { headers: authHeaders.headers, tags: { name: 'getproduct' } });
   check(productRes, { 'products is 200': r => r.status === 200 })
 
   const orderRes = http.post(
@@ -62,7 +62,7 @@ export default function () {
       customer_id: '1',
       items: [{ product_id: '3', quantity: 2, price: 10.62 }],
     }),
-    authHeaders, { tags: { name: 'orders' } }
+    { headers: authHeaders.headers, tags: { name: 'orders' } }
   )
   check(orderRes, { 'orders is 200': r => r.status === 201 })
 
