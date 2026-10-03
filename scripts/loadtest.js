@@ -15,18 +15,12 @@ export const options = {
 
 const BASE_URL = "http://localhost:3001/api/v1"
 
-export default function () {
-  const pingRes = http.get(`${BASE_URL}/ping`)
-  check(pingRes, {
-    'ping is 200': r => r.status === 200
-  })
-
+export function setup() {
   const createUserRes = http.post(`${BASE_URL}/create_user`,
     JSON.stringify({ email: 'test@test.com', password: 'testpassword' }),
     { headers: { 'Content-Type': 'application/json' } }
   )
   check(createUserRes, { 'creat user is 200': r => r.status === 200 })
-
   const loginRes = http.post(
     `${BASE_URL}/login`,
     JSON.stringify({ email: 'test@test.com', password: 'testpassword' }),
@@ -34,16 +28,20 @@ export default function () {
   )
   check(loginRes, { 'login is 200': r => r.status === 200 })
 
-  if (loginRes.status !== 200) {
-    sleep(1);
-    return;
-  }
-
   const token = JSON.parse(loginRes.body).token;
+  return { token: token }
+}
+
+export default function () {
+  const pingRes = http.get(`${BASE_URL}/ping`)
+  check(pingRes, {
+    'ping is 200': r => r.status === 200
+  })
+
   const authHeaders = {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${data.token}`
     }
   }
 
