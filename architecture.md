@@ -14,7 +14,6 @@ graph TB
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
     ProductsDB[(Products DB :7433)]
-    PaymentsDB[(Payments DB :9433)]
     StockDB[(Stock DB :8433)]
 
     Client -->|HTTP/JSON| Gateway
@@ -27,11 +26,10 @@ graph TB
     Auth --> AuthDB
     Orders --> OrdersDB
     Products --> ProductsDB
-    Payments --> PaymentsDB
     Stock --> StockDB
 ```
 
-All services are implemented and connected. The Gateway exposes HTTP/JSON endpoints and proxies requests to all backend gRPC services. Each service has its own dedicated PostgreSQL database.
+All services are implemented. The Gateway exposes HTTP/JSON endpoints and proxies requests to all backend gRPC services. Each service except Payments has its own dedicated PostgreSQL database.
 
 ## Request Flow
 
@@ -91,20 +89,17 @@ graph LR
     AuthDB[(auth_db :6433)]
     OrdersDB[(orders_db :5433)]
     ProductsDB[(products_db :7433)]
-    PaymentsDB[(payments_db :9433)]
     StockDB[(stock_db :8433)]
 
     AuthDB -->|users table| AuthSchema[id, email, password, name]
     OrdersDB -->|orders + order_items tables| OrdersSchema[order + items]
     ProductsDB -->|products table| ProductsSchema[id, name, price, quantity]
-    PaymentsDB -->|payments table| PaymentsSchema[id, order_id, payment_id, status]
     StockDB -->|products table| StockSchema[id, name, price, quantity]
 ```
 
 - `auth_db` (`:6433`) — created by `scripts/auth_init.sql`, used by the Auth service
 - `orders_db` (`:5433`) — created by `scripts/orders_init.sql`, used by the Orders service
 - `products_db` (`:7433`) — created by `scripts/products_init.sql`, used by the Products service
-- `payments_db` (`:9433`) — created by `scripts/payments_init.sql`, used by the Payments service
 - `stock_db` (`:8433`) — created by `scripts/stock_init.sql`, used by the Stock service
 
 ## Services
@@ -115,5 +110,5 @@ graph LR
 | Auth | 5555 | gRPC | :6433 | User creation, authentication, token verification, user lookup |
 | Orders | 4444 | gRPC | :5433 | Order creation with DB persistence, order retrieval, product stock check |
 | Products | 7777 | gRPC | :7433 | Product catalog management with DB-backed handlers |
-| Payments | 9000 | gRPC | :9433 | Mock payment processing with success/failure logic |
+| Payments | 9000 | gRPC | — | Mock payment processing with success/failure logic |
 | Stock | 8888 | gRPC | :8433 | Inventory management with stock check and reservation |

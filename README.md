@@ -16,7 +16,6 @@ graph TB
     AuthDB[(Auth DB :6433)]
     OrdersDB[(Orders DB :5433)]
     ProductsDB[(Products DB :7433)]
-    PaymentsDB[(Payments DB :9433)]
     StockDB[(Stock DB :8433)]
 
     Client -->|HTTP/JSON| Gateway
@@ -29,11 +28,10 @@ graph TB
     Auth --> AuthDB
     Orders --> OrdersDB
     Products --> ProductsDB
-    Payments --> PaymentsDB
     Stock --> StockDB
 ```
 
-The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services. All services are fully implemented and connected to their respective databases.
+The Gateway exposes a REST/JSON interface and translates requests into gRPC calls to backend services. All services are fully implemented. All services except Payments are connected to their respective databases.
 
 For a more detailed architecture description, see [architecture.md](architecture.md).
 
@@ -44,7 +42,7 @@ For a more detailed architecture description, see [architecture.md](architecture
 | Gateway | Working | HTTP → gRPC proxy for auth, orders, products, payments, and stock, with request logging and JWT auth middleware on protected routes |
 | Auth | Working | `CreateUser` and `Login` (JWT) backed by PostgreSQL |
 | Orders | Working | `CreateOrder`, `GetOrder`, and `CheckProductInStore` backed by PostgreSQL on `:4444`; in `docker-compose.yml` and wired in gateway |
-| Payments | Working | `ProcessPayment` with mock payment logic on `:9000`; in `docker-compose.yml` and wired in gateway |
+| Payments | Working | `ProcessPayment` with mock payment logic on `:9000`; wired in gateway |
 | Stock | Working | `CheckStock` and `ReserveStock` backed by PostgreSQL on `:8888`; in `docker-compose.yml` and wired in gateway |
 | Products | Working | `AddProduct` and `GetProducts`/`GetProduct` backed by PostgreSQL on `:7777`; in `docker-compose.yml` and wired in gateway |
 
@@ -122,7 +120,7 @@ ecommerce-microservices/
 │   ├── cmd/main.go          # gRPC server entry point
 │   ├── internal/
 │   │   ├── db/
-│   │   │   ├── db.go        # OrderModel + Models (pgxpool injection)
+│   │   │   ├── db.go        # Models (pgxpool injection)
 │   │   │   └── orders.go    # CreateOrder, GetOrder, CheckProductInStore SQL methods
 │   │   └── handler/
 │   │       └── grpc.go      # OrderGRPCHandler: CreateOrder, GetOrder, CheckProductInStore
@@ -255,9 +253,7 @@ Database: `orders_db` on `:5433`, accessed via a `pgx/v5` pool. The `scripts/ord
 
 Listens on `:9000`.
 
-- `ProcessPayment` — mock payment processing that returns `success` for amounts ≤ 10000 and `failed` for amounts > 10000 or ≤ 0. Each response includes a mock `payment_id` prefixed with `mock-payment-`.
-
-Database: `payments_db` on `:9433`, accessed via a `pgx/v5` pool. The `scripts/payments_init.sql` creates the `payments` table.
+- `ProcessPayment` — mock payment processing that returns `success` for amounts > 0 and ≤ 10000, and `failed` for amounts > 10000 or ≤ 0. Each response includes a mock `payment_id` prefixed with `mock-payment-`.
 
 ### Stock Service (`stock/`)
 
@@ -480,7 +476,7 @@ All values are loaded through `godotenv/autoload` from the service's `.env` file
 | `AUTH_DB_CONN_STR` | `postgres://auth:auth@localhost:6433/auth_db` | auth |
 | `ORDERS_DB_CONN_STR` | `postgres://orders:orders@localhost:5433/orders_db` | orders |
 | `PRODUCTS_DB_CONN_STR` | `postgres://product:product@localhost:7433/products_db` | products |
-| `STOCK_DB_CONN_STR` | `postgres://stock:stock@stock-db:5432/stock_db` | stock |
+| `STOCK_DB_CONN_STR` | `postgres://stock:stock@localhost:8433/stock_db` | stock |
 | `jwt_secret` | `secret` | auth |
 
 > `jwt_secret` is intentionally lowercase in the code and is not present in `auth/.env.example`. Set it explicitly before deploying anywhere real.
