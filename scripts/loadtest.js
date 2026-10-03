@@ -15,39 +15,40 @@ export const options = {
 
 const BASE_URL = "http://localhost:3000/api/v1"
 
-export function setup() {
-  const createUserRes = http.post(`${BASE_URL}/create_user`,
-    JSON.stringify({ email: 'test@test.com', password: 'testpassword' }),
-    { headers: { 'Content-Type': 'application/json' } }
-  )
-  check(createUserRes, { 'creat user is 200': r => r.status === 201 })
-  const loginRes = http.post(
-    `${BASE_URL}/login`,
-    JSON.stringify({ email: 'test@test.com', password: 'testpassword' }),
-    { headers: { 'Content-Type': 'application/json' } }
-  )
-  check(loginRes, { 'login is 200': r => r.status === 200 })
-  const token = JSON.parse(loginRes.body).token;
-  const prodRes = http.post(`${BASE_URL}/add_product`,
-    JSON.stringify({ product: { name: "Widget", price: 9.99, quantity: 100 } }),
-    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }
-  )
-  console.log(prodRes.body)
-  check(prodRes, { 'add product is 200': r => r.status === 201 })
 
-  return { token: token }
-}
 
 export default function (data) {
+  const uniqueEmail = `user-${__VU}-${__ITER}@test.com`;
+  const uniqueName = `Widget-${__VU}-${__ITER}`;
   const pingRes = http.get(`${BASE_URL}/ping`)
   check(pingRes, {
     'ping is 200': r => r.status === 200
   })
 
+  const createUserRes = http.post(`${BASE_URL}/create_user`,
+    JSON.stringify({ email: uniqueEmail, password: 'testpassword' }),
+    { headers: { 'Content-Type': 'application/json' } }
+  )
+  check(createUserRes, { 'creat user is 200': r => r.status === 201 })
+  const loginRes = http.post(
+    `${BASE_URL}/login`,
+    JSON.stringify({ email: uniqueEmail, password: 'testpassword' }),
+    { headers: { 'Content-Type': 'application/json' } }
+  )
+  check(loginRes, { 'login is 200': r => r.status === 200 })
+  const token = JSON.parse(loginRes.body).token;
+  const prodRes = http.post(`${BASE_URL}/add_product`,
+    JSON.stringify({ product: { name: uniqueName, price: 9.99, quantity: 100 } }),
+    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }
+  )
+  console.log(prodRes.body)
+  check(prodRes, { 'add product is 200': r => r.status === 201 })
+
+
   const authHeaders = {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${data.token}`
+      'Authorization': `Bearer ${token}`
     }
   }
 
