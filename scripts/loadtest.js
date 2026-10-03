@@ -17,7 +17,7 @@ const BASE_URL = "http://localhost:3000/api/v1"
 
 
 
-export default function (data) {
+export default function () {
   const uniqueEmail = `user-${__VU}-${__ITER}@test.com`;
   const uniqueName = `Widget-${__VU}-${__ITER}`;
   const pingRes = http.get(`${BASE_URL}/ping`)
