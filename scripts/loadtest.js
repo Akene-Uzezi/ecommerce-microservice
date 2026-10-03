@@ -2,9 +2,10 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-  vus: 50,
+  vus: 100,
   duration: "1m",
   thresholds: {
+    http_req_duration: ['p(95)<500'],
     'http_req_duration{name:ping}': ['p(95)<500'],
     'http_req_duration{name:createuser}': ['p(95)<500'],
     'http_req_duration{name:login}': ['p(95)<500'],
