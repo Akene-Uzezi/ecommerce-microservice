@@ -28,7 +28,7 @@ export default function () {
   )
   check(loginRes, { 'login is 200': r => r.status === 200 })
 
-  if (loginRes.Status !== 200) {
+  if (loginRes.status !== 200) {
     sleep(1);
     return;
   }
