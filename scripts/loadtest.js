@@ -21,6 +21,12 @@ export default function () {
     'ping is 200': r => r.status === 200
   })
 
+  const createUserRes = http.post(`${BASE_URL}/create_user`,
+    JSON.stringify({ email: 'test@test.com', password: 'testpassword' }),
+    { headers: { 'Content-Type': 'application/json' } }
+  )
+  check(createUserRes, { 'creat user is 200': r => r.status === 200 })
+
   const loginRes = http.post(
     `${BASE_URL}/login`,
     JSON.stringify({ email: 'test@test.com', password: 'testpassword' }),
