@@ -41,7 +41,6 @@ export default function () {
     JSON.stringify({ product: { name: uniqueName, price: 9.99, quantity: 100 } }),
     { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }
   )
-  console.log(prodRes.body)
   check(prodRes, { 'add product is 200': r => r.status === 201 })
 
 
