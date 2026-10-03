@@ -27,8 +27,13 @@ export function setup() {
     { headers: { 'Content-Type': 'application/json' } }
   )
   check(loginRes, { 'login is 200': r => r.status === 200 })
-
   const token = JSON.parse(loginRes.body).token;
+  const prodRes = http.post(`${BASE_URL}/add_product`,
+    JSON.stringify({ name: "Widget", price: 9.99, quantity: 100 }),
+    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer: ${token}` } }
+  )
+  check(prodRes, { 'add product is 200': r => r.status === 201 })
+
   return { token: token }
 }
 
