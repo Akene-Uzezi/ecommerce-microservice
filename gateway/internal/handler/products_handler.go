@@ -57,15 +57,9 @@ func (h *ProductsHTTPHandler) addProduct(w http.ResponseWriter, r *http.Request)
 
 func (h *ProductsHTTPHandler) getProducts(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	var requestBody productspb.GetProductsRequest
-	if err := shared.ReadJSON(r, &requestBody); err != nil {
-		shared.WriteErrorBadRequest(w, "Invalid requestBody", err)
-		shared.LogBadRequest(r.Method, r.RequestURI, time.Since(start))
-		return
-	}
 
 	ctx := r.Context()
-	res, err := h.productsClient.GetProducts(ctx, &requestBody)
+	res, err := h.productsClient.GetProducts(ctx, &productspb.GetProductsRequest{})
 	if err != nil {
 		log.Printf("failed to init request: %s", err)
 		shared.WriteErrorServerError(w, "failed to init request", err)
