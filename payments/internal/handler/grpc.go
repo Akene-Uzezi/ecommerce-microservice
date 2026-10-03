@@ -2,9 +2,10 @@ package handler
 
 import (
 	"context"
-	"log"
+	"time"
 
 	paymentpb "ecommerce-api/gen/payment"
+	shared "ecommerce-shared"
 )
 
 type PaymentGRPCHandler struct {
@@ -16,24 +17,29 @@ func NewPaymentGRPCHandler() *PaymentGRPCHandler {
 }
 
 func (h *PaymentGRPCHandler) ProcessPayment(ctx context.Context, req *paymentpb.ProcessPaymentRequest) (*paymentpb.ProcessPaymentResponse, error) {
-	log.Printf("processing mock payment for order %s, customer %s, amount %.2f", req.OrderId, req.CustomerId, req.Amount)
-
+	start := time.Now()
 	if req.Amount <= 0 {
-		return &paymentpb.ProcessPaymentResponse{
+		res := &paymentpb.ProcessPaymentResponse{
 			PaymentId: "mock-payment-" + req.OrderId,
 			Status:    "failed",
-		}, nil
+		}
+		shared.LogRequest("ProcessPayment", "/payment.ProcessPayment", 400, time.Since(start))
+		return res, nil
 	}
 
 	if req.Amount > 10000 {
-		return &paymentpb.ProcessPaymentResponse{
+		res := &paymentpb.ProcessPaymentResponse{
 			PaymentId: "mock-payment-" + req.OrderId,
 			Status:    "failed",
-		}, nil
+		}
+		shared.LogRequest("ProcessPayment", "/payment.ProcessPayment", 400, time.Since(start))
+		return res, nil
 	}
 
-	return &paymentpb.ProcessPaymentResponse{
+	res := &paymentpb.ProcessPaymentResponse{
 		PaymentId: "mock-payment-" + req.OrderId,
 		Status:    "success",
-	}, nil
+	}
+	shared.LogRequest("ProcessPayment", "/payment.ProcessPayment", 0, time.Since(start))
+	return res, nil
 }

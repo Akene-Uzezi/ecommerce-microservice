@@ -25,3 +25,7 @@ func LogNotFound(method, url string, duration time.Duration) {
 func LogUnauthorized(method, url string, duration time.Duration) {
 	log.Printf("%s %s %d %s", method, url, http.StatusUnauthorized, duration)
 }
+
+func LogRequest(method, url string, statusCode int, duration time.Duration) {
+	log.Printf("%s %s %d %s", method, url, statusCode, duration)
+}

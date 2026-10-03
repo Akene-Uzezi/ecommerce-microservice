@@ -3,9 +3,10 @@ package handler
 import (
 	"context"
 	"ecommerce-orders/internal/db"
-	"log"
+	"time"
 
 	orderpb "ecommerce-api/gen/order"
+	shared "ecommerce-shared"
 )
 
 type OrderGRPCHandler struct {
@@ -20,13 +21,13 @@ func NewOrderGRPCHandler(models *db.Models) *OrderGRPCHandler {
 }
 
 func (h *OrderGRPCHandler) CreateOrder(ctx context.Context, req *orderpb.CreateOrderRequest) (*orderpb.OrderResponse, error) {
-	log.Printf("received create order request for customer %s with %d items", req.CustomerId, len(req.Items))
-
+	start := time.Now()
 	orderID, totalAmount, err := h.models.OrderModel.CreateOrder(ctx, req.CustomerId, req.Items)
 	if err != nil {
+		shared.LogRequest("CreateOrder", "/order.CreateOrder", 500, time.Since(start))
 		return nil, err
 	}
-
+	shared.LogRequest("CreateOrder", "/order.CreateOrder", 0, time.Since(start))
 	return &orderpb.OrderResponse{
 		Id:          orderID,
 		CustomerId:  req.CustomerId,
@@ -37,15 +38,23 @@ func (h *OrderGRPCHandler) CreateOrder(ctx context.Context, req *orderpb.CreateO
 }
 
 func (h *OrderGRPCHandler) GetOrder(ctx context.Context, req *orderpb.GetOrderRequest) (*orderpb.OrderResponse, error) {
-	log.Printf("received get order request for order %s", req.Id)
-	return h.models.OrderModel.GetOrder(ctx, req.Id)
+	start := time.Now()
+	order, err := h.models.OrderModel.GetOrder(ctx, req.Id)
+	if err != nil {
+		shared.LogRequest("GetOrder", "/order.GetOrder", 500, time.Since(start))
+		return nil, err
+	}
+	shared.LogRequest("GetOrder", "/order.GetOrder", 0, time.Since(start))
+	return order, nil
 }
 
 func (h *OrderGRPCHandler) CheckProductInStore(ctx context.Context, req *orderpb.CheckProductInStoreRequest) (*orderpb.CheckProductInStoreResponse, error) {
-	log.Printf("received check product in store request for %s", req.ProductName)
+	start := time.Now()
 	quantity, err := h.models.OrderModel.CheckProductInStore(ctx, req.ProductName)
 	if err != nil {
+		shared.LogRequest("CheckProductInStore", "/order.CheckProductInStore", 500, time.Since(start))
 		return nil, err
 	}
+	shared.LogRequest("CheckProductInStore", "/order.CheckProductInStore", 0, time.Since(start))
 	return &orderpb.CheckProductInStoreResponse{Quantity: quantity}, nil
 }
