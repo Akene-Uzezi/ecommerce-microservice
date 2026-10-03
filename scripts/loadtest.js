@@ -32,7 +32,7 @@ export function setup() {
   return { token: token }
 }
 
-export default function () {
+export default function (data) {
   const pingRes = http.get(`${BASE_URL}/ping`)
   check(pingRes, {
     'ping is 200': r => r.status === 200
