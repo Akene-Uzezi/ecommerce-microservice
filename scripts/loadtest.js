@@ -29,7 +29,7 @@ export function setup() {
   check(loginRes, { 'login is 200': r => r.status === 200 })
   const token = JSON.parse(loginRes.body).token;
   const prodRes = http.post(`${BASE_URL}/add_product`,
-    JSON.stringify({ name: "Widget", price: 9.99, quantity: 100 }),
+    JSON.stringify({ product: { name: "Widget", price: 9.99, quantity: 100 } }),
     { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }
   )
   console.log(prodRes.body)
