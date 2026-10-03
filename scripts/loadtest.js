@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '5s', target: 10 },
-    { duration: '5s', target: 10 },
+    { duration: '30s', target: 10 },
+    { duration: '30s', target: 10 },
     { duration: '0s', target: 0 },
   ],
   thresholds: {
@@ -13,7 +13,7 @@ export const options = {
   },
 }
 
-const BASE_URL = "http://localhost:3001/api/v1"
+const BASE_URL = "http://localhost:3000/api/v1"
 
 export function setup() {
   const createUserRes = http.post(`${BASE_URL}/create_user`,
