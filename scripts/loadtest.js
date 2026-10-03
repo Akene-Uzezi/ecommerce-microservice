@@ -13,4 +13,11 @@ export const options = {
   },
 }
 
-const BASE_URL = "http://localhost:3000/api/v1"
+const BASE_URL = "https://jsonplaceholder.typicode.com/posts/1"
+
+export default function () {
+  const pingRes = http.get(`${BASE_URL}`)
+  check(pingRes, {
+    'ping is 200': r => r.status === 200
+  })
+}
