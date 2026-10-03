@@ -56,7 +56,7 @@ export default function (data) {
     }),
     authHeaders
   )
-  check(orderRes, { 'orders is 200': r => r.status === 200 })
+  check(orderRes, { 'orders is 200': r => r.status === 201 })
 
   sleep(1);
 }
