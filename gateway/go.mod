@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/Akene-Uzezi/clogger v0.0.2 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect

@@ -8,6 +8,8 @@ import (
 
 	authpb "ecommerce-api/gen/auth"
 
+	clogger "github.com/Akene-Uzezi/clogger"
+
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -22,6 +24,7 @@ var (
 )
 
 func main() {
+	logger := clogger.New(nil)
 	addr := fmt.Sprintf(":%s", gatewayPort)
 	mux := http.NewServeMux()
 	authClient, authServiceConn := initAuthService(mux)
@@ -36,7 +39,7 @@ func main() {
 	defer stockServiceConn.Close()
 	log.Printf("Server running on port %s", addr)
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, logger.Start(mux)); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }
