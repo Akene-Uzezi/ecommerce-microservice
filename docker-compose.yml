@@ -102,13 +102,16 @@ services:
     build:
       context: .
       dockerfile: products/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 10
     depends_on:
       products-db:
         condition: service_healthy
     environment:
       - PRODUCTS_DB_CONN_STR=postgres://product:product@products-db:5432/products_db
     ports:
-      - "7777:7777"
+      - "7777-7787:7777"
     env_file:
       - ./products/.env
 
@@ -116,13 +119,16 @@ services:
     build:
       context: .
       dockerfile: auth/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 10
     depends_on:
       auth-db:
         condition: service_healthy
     environment:
       - AUTH_DB_CONN_STR=postgres://auth:auth@auth-db:5432/auth_db
     ports:
-      - "5556:5555"
+      - "5556-5565:5555"
     env_file:
       - ./auth/.env
 
@@ -156,6 +162,9 @@ services:
     build:
       context: .
       dockerfile: gateway/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 3
     depends_on:
       - auth
       - orders
@@ -169,7 +178,7 @@ services:
       - PAYMENTS_SERVICE_URL=payments:9000
       - STOCK_SERVICE_URL=stock:8888
     ports:
-      - "3001:3000"
+      - "3001-3003:3000"
     env_file:
       - ./gateway/.env
 

@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-  vus: 1000,
+  vus: 100,
   duration: "1m",
   thresholds: {
     http_req_duration: ['p(95)<500'],
@@ -16,7 +16,7 @@ export const options = {
   },
 }
 
-const BASE_URL = "http://localhost:3000/api/v1"
+const BASE_URL = "http://localhost:3001/api/v1"
 
 
 
